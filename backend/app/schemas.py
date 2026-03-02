@@ -123,6 +123,28 @@ class EventResponse(EventCreate):
 
 
 
+#  Syllabus Upload Schemas
+
+class SyllabusUploadResponse(BaseModel):
+    id: UUID
+    file_name: str
+    original_name: str
+    file_type: Optional[str]
+    file_size: Optional[int]
+    status: str                      # uploading | processing | done | error
+    parsed_data: Optional[dict[str, Any]] = None
+    error_message: Optional[str] = None
+    course_id: Optional[UUID] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class SyllabusParseResult(BaseModel):
+    course_info: Optional[CourseCreate] = None
+    events: list[EventCreate] = []
+    raw_text: Optional[str] = None
+
 # calendar Event Schemas
 
 class CalendarEventResponse(BaseModel):
