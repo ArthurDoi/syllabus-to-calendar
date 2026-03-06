@@ -72,7 +72,9 @@ async def upload_syllabus(
 
 
 async def _process_syllabus(upload_id, file_path: str, file_type: str, user_id):
-    """Background task: gọi AI parse rồi lưu events vào DB"""
+    """Background task: gọi AI parse rồi lưu JSON vào parsed_data.
+    KHÔNG tạo Course/Event ở đây – việc tạo xảy ra khi user xác nhận trong ReviewModal.
+    """
     from app.database import AsyncSessionLocal  # tránh circular import
 
     async with AsyncSessionLocal() as db:
@@ -84,31 +86,15 @@ async def _process_syllabus(upload_id, file_path: str, file_type: str, user_id):
         try:
             parsed: SyllabusParseResult = await parse_syllabus_image(file_path, file_type)
 
-            # Tạo Course nếu AI trích xuất được thông tin
-            course_id = upload.course_id
-            if parsed.course_info and not course_id:
-                course = Course(user_id=user_id, **parsed.course_info.model_dump())
-                db.add(course)
-                await db.flush()
-                course_id = course.id
-
-            # Tạo Events
-            for event_data in parsed.events:
-                event = Event(
-                    user_id=user_id,
-                    course_id=course_id,
-                    **event_data.model_dump(exclude={"metadata_json"}),
-                    metadata_json=event_data.metadata_json,
-                )
-                db.add(event)
-
+            # Chỉ lưu kết quả parse – không tạo Course/Event
+            # User sẽ xem lại và xác nhận trong ReviewModal
             upload.status = "done"
             upload.parsed_data = parsed.model_dump(mode="json")
-            upload.course_id = course_id
+            # course_id vẫn None cho đến khi user xác nhận
 
         except Exception as exc:
             upload.status = "error"
-            upload.error_message = str(exc)
+            upload.error_message = f"{type(exc).__name__}: {exc}"
 
         await db.commit()
 

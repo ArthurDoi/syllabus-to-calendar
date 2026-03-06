@@ -34,6 +34,18 @@ Thumbs.db
 uploads/
 /uploads
 
+# Python
+venv*/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+
+# Old backend (deprecated)
+BE/
+BE_old/
+
 # IDE
 .vscode/
 .idea/

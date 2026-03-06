@@ -1,17 +1,12 @@
-"""
-Service trích xuất lịch trình từ ảnh/PDF syllabus bằng OpenAI GPT-4o Vision.
-Thay OPENAI bằng Google Gemini nếu muốn.
-"""
-
-import base64
 import json
 from pathlib import Path
-import httpx
+
+from google import genai
+from google.genai import types
 
 from app.core.config import settings
 from app.schemas import CourseCreate, EventCreate, SyllabusParseResult
 
-OPENAI_CHAT_URL = settings.OPENAI_CHAT_URL
 
 SYSTEM_PROMPT = """
 Bạn là trợ lý giáo dục thông minh. Nhiệm vụ của bạn là đọc hình ảnh syllabus môn học
@@ -46,64 +41,49 @@ Nếu không tìm thấy thông tin, để null. Luôn trả về JSON thuần t
 
 
 async def parse_syllabus_image(file_path: str, file_type: str) -> SyllabusParseResult:
-    """Gọi OpenAI GPT-4o Vision để parse syllabus"""
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
     file_bytes = Path(file_path).read_bytes()
-    b64 = base64.b64encode(file_bytes).decode()
 
-    # Xác định media type cho API
-    media_map = {
-        "image/jpeg": "image/jpeg",
-        "image/png": "image/png",
-        "image/webp": "image/webp",
-        "application/pdf": "image/png",  # cần convert PDF trước nếu dùng Vision
-    }
-    media_type = media_map.get(file_type, "image/png")
+    response = client.models.generate_content(
+        model=settings.GEMINI_MODEL,
+        contents=[
+            types.Part.from_bytes(data=file_bytes, mime_type=file_type),
+            SYSTEM_PROMPT
+        ]
+    )
 
-    payload = {
-        "model": settings.OPENAI_MODEL,
-        "max_tokens": 4096,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:{media_type};base64,{b64}"},
-                    },
-                    {"type": "text", "text": "Hãy phân tích syllabus này và trả về JSON."},
-                ],
-            },
-        ],
-    }
+    raw = response.text.strip()
+    raw = raw.replace("```json", "").replace("```", "").strip()
 
-    async with httpx.AsyncClient(timeout=60) as client:
-        resp = await client.post(
-            OPENAI_CHAT_URL,
-            json=payload,
-            headers={
-                "Authorization": f"Bearer {settings.OPENAI_API_KEY}",
-                "Content-Type": "application/json",
-            },
-        )
-
-    resp.raise_for_status()
-    raw = resp.json()["choices"][0]["message"]["content"]
-
-    # Parse JSON từ AI
-    data = json.loads(raw.strip())
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"AI trả về JSON không hợp lệ: {e}. Response: {raw[:200]}")
 
     course_info = None
     if data.get("course_info"):
-        course_info = CourseCreate(**data["course_info"])
+        # Sanitize: convert empty strings → None for date fields
+        ci = data["course_info"]
+        for date_field in ("start_date", "end_date"):
+            if ci.get(date_field) == "":
+                ci[date_field] = None
+        try:
+            course_info = CourseCreate(**ci)
+        except Exception:
+            # Nếu không parse được course_info thì bỏ qua, vẫn lấy events
+            course_info = None
 
     events = []
     for ev in data.get("events", []):
+        # Sanitize date fields in events
+        for date_field in ("start_time", "end_time"):
+            if ev.get(date_field) == "":
+                ev[date_field] = None
         try:
             events.append(EventCreate(**ev))
         except Exception:
-            pass  # bỏ qua event lỗi format
+            pass
 
     return SyllabusParseResult(
         course_info=course_info,
