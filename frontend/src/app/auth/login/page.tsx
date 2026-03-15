@@ -17,8 +17,15 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-    } catch {
-      setError("Email hoặc mật khẩu không đúng");
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setError(detail[0].msg);
+      } else if (typeof detail === "string") {
+        setError(detail);
+      } else {
+        setError("Email hoặc mật khẩu không đúng");
+      }
     } finally {
       setLoading(false);
     }

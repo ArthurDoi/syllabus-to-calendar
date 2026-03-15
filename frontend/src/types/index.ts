@@ -84,7 +84,7 @@ export interface EventCreate {
 export interface EventUpdate extends Partial<EventCreate> {}
 
 // ── Syllabus ──────────────────────────────────────────────────────────────────
-export type UploadStatus = "uploading" | "processing" | "done" | "error";
+export type UploadStatus = "uploading" | "uploaded" | "processing" | "done" | "error";
 
 export interface SyllabusUpload {
   id: string;

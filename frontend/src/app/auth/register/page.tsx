@@ -19,7 +19,14 @@ export default function RegisterPage() {
     try {
       await register(email, password, name);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Đăng ký thất bại");
+      const detail = err?.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setError(detail[0].msg);
+      } else if (typeof detail === "string") {
+        setError(detail);
+      } else {
+        setError("Đăng ký thất bại");
+      }
     } finally {
       setLoading(false);
     }

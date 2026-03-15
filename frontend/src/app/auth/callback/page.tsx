@@ -1,10 +1,8 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-// Backend redirect về đây với token trong query params
-// Hoặc backend có thể redirect về /auth/callback?access_token=...
-export default function GoogleCallbackPage() {
+function CallbackContent() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -18,11 +16,23 @@ export default function GoogleCallbackPage() {
     } else {
       router.push("/auth/login?error=google_failed");
     }
-  }, []);
+  }, [params, router]);
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ fontSize: 14, color: "#6b7280" }}>Đang xử lý đăng nhập Google...</div>
     </div>
+  );
+}
+
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ fontSize: 14, color: "#6b7280" }}>Đang tải...</div>
+      </div>
+    }>
+      <CallbackContent />
+    </Suspense>
   );
 }

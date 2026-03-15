@@ -37,6 +37,7 @@ uploads/
 # Python
 venv*/
 env/
+.pytest_cache/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -57,3 +58,4 @@ BE_old/
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+

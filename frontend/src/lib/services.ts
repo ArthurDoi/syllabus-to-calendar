@@ -119,6 +119,11 @@ export const syllabusService = {
     await api.delete(`/syllabus/${uploadId}`);
   },
 
+  extract: async (uploadId: string): Promise<SyllabusUpload> => {
+    const res = await api.post(`/syllabus/${uploadId}/extract`);
+    return res.data;
+  },
+
   // Poll status cho đến khi done/error
   pollUntilDone: (
     uploadId: string,
@@ -159,5 +164,20 @@ export const calendarService = {
 
   disconnect: async (): Promise<void> => {
     await api.delete("/calendar/disconnect");
+  },
+};
+
+// ── AI Chat ───────────────────────────────────────────────────────────────────
+export interface ChatMessage { role: "user" | "assistant"; text: string; }
+
+export interface ChatResponse {
+  answer: string;
+  action_taken: string | null;
+}
+
+export const chatService = {
+  send: async (message: string, history: ChatMessage[] = []): Promise<ChatResponse> => {
+    const res = await api.post("/chat/", { message, history });
+    return res.data;
   },
 };
