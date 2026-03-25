@@ -63,6 +63,10 @@ jobs:
           GEMINI_API_KEY: dummy
           GEMINI_MODEL: models/gemini-pro
           FRONTEND_URL: http://localhost:3000
+          APP_NAME: Syllabus to Calendar
+          GOOGLE_CLIENT_ID: dummy-client-id
+          GOOGLE_CLIENT_SECRET: dummy-client-secret
+          GOOGLE_REDIRECT_URI: http://localhost:8000/api/v1/auth/google/callback
         run: |
           alembic upgrade head
           pytest tests/ -v --tb=short
