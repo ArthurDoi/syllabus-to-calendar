@@ -7,8 +7,9 @@ from sqlalchemy import select
 
 from app.core.security import get_current_user
 from app.database import get_db
-from app.models import Course, Event, User
+from app.models import CalendarEvent, Course, Event, GoogleCalendarSync, User
 from app.schemas import CourseCreate, CourseUpdate, CourseResponse, MessageResponse
+from app.services.google_calendar_service import delete_google_calendar_event
 
 router = APIRouter(prefix="/courses", tags=["Courses"])
 logger = logging.getLogger(__name__)
@@ -90,6 +91,46 @@ async def delete_course(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
+    # Lấy tất cả events của course này
+    events_result = await db.execute(
+        select(Event).where(Event.course_id == course_id, Event.user_id == current_user.id)
+    )
+    events = events_result.scalars().all()
+
+    if events:
+        # Lấy Google Calendar sync record (nếu có)
+        sync_result = await db.execute(
+            select(GoogleCalendarSync).where(
+                GoogleCalendarSync.user_id == current_user.id
+            )
+        )
+        sync = sync_result.scalar_one_or_none()
+
+        for event in events:
+            # Kiểm tra event đã được sync lên Google Calendar chưa
+            cal_result = await db.execute(
+                select(CalendarEvent).where(CalendarEvent.event_id == event.id)
+            )
+            cal_event = cal_result.scalar_one_or_none()
+
+            if cal_event and cal_event.google_event_id and sync:
+                try:
+                    await delete_google_calendar_event(
+                        google_event_id=cal_event.google_event_id,
+                        sync=sync,
+                        db=db,
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "Could not delete Google Calendar event %s: %s",
+                        cal_event.google_event_id,
+                        exc,
+                    )
+
+            if cal_event:
+                await db.delete(cal_event)
+
+    # Xóa course (cascade xóa các Events còn lại trong DB)
     await db.delete(course)
     await db.commit()
     return MessageResponse(message="Course deleted")

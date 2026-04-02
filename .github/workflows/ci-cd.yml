@@ -153,23 +153,50 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          script_stop: true
           script: |
+            # ── 1. Tạo thư mục và clone repo lần đầu nếu chưa có
+            if [ ! -d /opt/syllabus-to-calendar ]; then
+              git clone https://github.com/${{ github.repository }}.git /opt/syllabus-to-calendar
+            fi
             cd /opt/syllabus-to-calendar
-
-            # Pull latest compose file
             git pull origin main
 
-            # Login to registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            # ── 2. Login GHCR bằng PAT (không dùng GITHUB_TOKEN)
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Set image tags
+            # ── 3. Ghi file .env backend từ secrets
+            cat > ./backend/.env << 'ENVEOF'
+            DATABASE_HOSTNAME=db
+            DATABASE_PORT=5432
+            DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }}
+            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
+            DATABASE_NAME=${{ secrets.DATABASE_NAME }}
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            ALGORITHM=HS256
+            ACCESS_TOKEN_EXPIRE_MINUTES=30
+            REFRESH_TOKEN_EXPIRE_DAYS=7
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            GEMINI_MODEL=${{ secrets.GEMINI_MODEL }}
+            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}
+            APP_NAME=Syllabus to Calendar
+            ENVEOF
+
+            # ── 4. Set image tags và deploy
             export DOCKER_IMAGE_BACKEND=ghcr.io/${{ env.IMAGE_BACKEND }}:latest
             export DOCKER_IMAGE_FRONTEND=ghcr.io/${{ env.IMAGE_FRONTEND }}:latest
             export NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
 
-            # Pull new images and restart
             docker compose pull
             docker compose up -d --remove-orphans
 
-            # Cleanup old images
+            # ── 5. Kiểm tra containers đang chạy
+            sleep 10
+            docker compose ps
+            docker compose logs --tail=20 backend
+
+            # ── 6. Dọn images cũ
             docker image prune -f

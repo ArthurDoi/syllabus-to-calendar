@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-import uuid
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -16,82 +15,19 @@ from app.schemas import (
     GoogleSyncStatusResponse,
     MessageResponse,
 )
+from app.services.google_calendar_service import (
+    GOOGLE_CALENDAR_BASE,
+    delete_google_calendar_event,
+    ensure_aware,
+    get_valid_google_token,
+    now_utc,
+    to_google_datetime,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/calendar", tags=["Calendar"])
 
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
-GOOGLE_CALENDAR_BASE = "https://www.googleapis.com/calendar/v3"
-
-
-def _now_utc() -> datetime:
-    """Trả về datetime UTC có timezone info (offset-aware)."""
-    return datetime.now(timezone.utc)
-
-
-def _ensure_aware(dt: datetime | None) -> datetime | None:
-    """Nếu datetime là offset-naive (không có tzinfo), gán UTC cho nó."""
-    if dt is None:
-        return None
-    if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
-    return dt
-
-
-def _to_google_datetime(dt: datetime | None) -> str | None:
-    """Chuyển datetime sang chuỗi RFC3339 mà Google API chấp nhận."""
-    if dt is None:
-        return None
-    dt = _ensure_aware(dt)
-    return dt.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-
-
-# ── Helpers
-async def _get_valid_google_token(sync: GoogleCalendarSync, db: AsyncSession) -> str:
-    """Tự động refresh Google access token nếu hết hạn."""
-    expires_at = _ensure_aware(sync.token_expires_at)
-    if expires_at and expires_at > _now_utc() + timedelta(minutes=5):
-        return sync.access_token
-
-    if not sync.refresh_token:
-        raise HTTPException(
-            status_code=401,
-            detail="Google Calendar không còn kết nối. Hãy kết nối lại.",
-        )
-
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            GOOGLE_TOKEN_URL,
-            data={
-                "client_id": settings.GOOGLE_CLIENT_ID,
-                "client_secret": settings.GOOGLE_CLIENT_SECRET,
-                "refresh_token": sync.refresh_token,
-                "grant_type": "refresh_token",
-            },
-        )
-    data = resp.json()
-    new_token = data.get("access_token")
-    if not new_token:
-        error_code = data.get("error", "")
-        logger.error("Google token refresh failed: %s", data)
-        # Nếu token không còn đủ quyền hoặc bị thu hồi → xóa để buộc user kết nối lại
-        if error_code in ("invalid_grant", "insufficient_scope", "unauthorized_client"):
-            await db.delete(sync)
-            await db.commit()
-            raise HTTPException(
-                status_code=401,
-                detail="Quyền truy cập Google Calendar đã hết hạn hoặc không đủ. Vui lòng ngắt kết nối và kết nối lại Google Calendar.",
-            )
-        raise HTTPException(
-            status_code=401,
-            detail=f"Không thể làm mới token Google: {data.get('error_description', data.get('error', 'unknown'))}",
-        )
-
-    sync.access_token = new_token
-    expires_in = data.get("expires_in", 3600)
-    sync.token_expires_at = _now_utc() + timedelta(seconds=expires_in)
-    await db.commit()
-    return new_token
 
 
 async def _get_sync_record(user_id, db: AsyncSession) -> GoogleCalendarSync:
@@ -131,7 +67,7 @@ async def sync_events_to_google(
     current_user: User = Depends(get_current_user),
 ):
     sync = await _get_sync_record(current_user.id, db)
-    access_token = await _get_valid_google_token(sync, db)
+    access_token = await get_valid_google_token(sync, db)
 
     # Lấy tất cả events chưa được sync (chưa có bản ghi CalendarEvent tương ứng)
     result = await db.execute(
@@ -155,10 +91,10 @@ async def sync_events_to_google(
 
     async with httpx.AsyncClient() as client:
         for event, _ in rows:
-            start_str = _to_google_datetime(event.start_time)
-            end_str = _to_google_datetime(
+            start_str = to_google_datetime(event.start_time)
+            end_str = to_google_datetime(
                 event.end_time or (
-                    _ensure_aware(event.start_time) + timedelta(hours=1)
+                    ensure_aware(event.start_time) + timedelta(hours=1)
                 )
             )
             if not start_str:
@@ -203,7 +139,6 @@ async def sync_events_to_google(
                     or err_status in ('PERMISSION_DENIED',)
                 ):
                     await db.commit()  # lưu events đã sync được trước đó
-                    # Xóa record GoogleCalendarSync để buộc user reconnect với đủ quyền
                     await db.delete(sync)
                     await db.commit()
                     logger.warning("Deleted GoogleCalendarSync for user %s due to insufficient scope", current_user.id)
@@ -217,7 +152,7 @@ async def sync_events_to_google(
                     )
                 errors.append(f"{event.title}: {err_message}")
 
-    sync.last_synced_at = _now_utc()
+    sync.last_synced_at = now_utc()
     await db.commit()
 
     msg = f"Đã sync {synced}/{len(rows)} sự kiện lên Google Calendar."

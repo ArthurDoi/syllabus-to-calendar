@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -6,9 +7,14 @@ from sqlalchemy import select, and_
 
 from app.core.security import get_current_user
 from app.database import get_db
-from app.models import Event, User
+from app.models import CalendarEvent, Event, GoogleCalendarSync, User
 from app.schemas import EventCreate, EventUpdate, EventResponse, MessageResponse
+from app.services.google_calendar_service import (
+    delete_google_calendar_event,
+    get_valid_google_token,
+)
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/events", tags=["Events"])
 
 
@@ -87,6 +93,7 @@ async def delete_event(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # 1. Tìm event trong DB
     result = await db.execute(
         select(Event).where(Event.id == event_id, Event.user_id == current_user.id)
     )
@@ -94,6 +101,41 @@ async def delete_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
+    # 2. Kiểm tra event đã được sync lên Google Calendar chưa
+    cal_result = await db.execute(
+        select(CalendarEvent).where(CalendarEvent.event_id == event_id)
+    )
+    cal_event = cal_result.scalar_one_or_none()
+
+    if cal_event and cal_event.google_event_id:
+        # Lấy Google Calendar sync record của user
+        sync_result = await db.execute(
+            select(GoogleCalendarSync).where(
+                GoogleCalendarSync.user_id == current_user.id
+            )
+        )
+        sync = sync_result.scalar_one_or_none()
+
+        if sync:
+            try:
+                # Xóa event trên Google Calendar (404 = đã xóa tay → bỏ qua)
+                await delete_google_calendar_event(
+                    google_event_id=cal_event.google_event_id,
+                    sync=sync,
+                    db=db,
+                )
+            except Exception as exc:
+                # Không để lỗi Google Calendar chặn việc xóa local
+                logger.warning(
+                    "Could not delete Google Calendar event %s: %s",
+                    cal_event.google_event_id,
+                    exc,
+                )
+
+        # Xóa bản ghi CalendarEvent khỏi DB
+        await db.delete(cal_event)
+
+    # 3. Xóa event trong DB
     await db.delete(event)
     await db.commit()
     return MessageResponse(message="Event deleted")
