@@ -24,10 +24,16 @@ ssl_context = ssl.create_default_context()
 ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
 
+connect_args = {}
+# Chỉ kích hoạt SSL nếu dùng DATABASE_URL (production/Supabase) 
+# hoặc hostname không phải là localhost/db
+if settings.DATABASE_URL or settings.DATABASE_HOSTNAME not in ("localhost", "127.0.0.1", "db", ""):
+    connect_args["ssl"] = ssl_context
+
 engine = create_async_engine(
     DATABASE_URL,
     echo=settings.DEBUG,
-    connect_args={"ssl": ssl_context}
+    connect_args=connect_args
 )
 
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
