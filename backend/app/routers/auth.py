@@ -206,6 +206,19 @@ async def google_callback(code: str, state: str | None = None, db: AsyncSession 
 async def me(current_user: User = Depends(get_current_user)):
     return current_user
 
+@router.get("/stats")
+async def get_stats(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    from app.models import UserStats
+    result = await db.execute(select(UserStats).where(UserStats.user_id == current_user.id))
+    stats = result.scalar_one_or_none()
+    
+    if not stats:
+        return {"current_streak": 0, "best_streak": 0}
+        
+    return {
+        "current_streak": stats.current_streak,
+        "best_streak": stats.best_streak
+    }
 
 @router.post("/logout", response_model=MessageResponse)
 async def logout():
