@@ -83,7 +83,7 @@ export default function TasksPage() {
                     const isOverdue = ev.start_time && new Date(ev.start_time) < new Date() && ev.status !== "completed";
                     const isDone = ev.status === "completed";
                     const labelColor = LABEL_COLOR[ev.label || "lecture"] || "#5f6368";
-                    const labelText = LABEL_TEXT[ev.label || "lecture"] || "Nhiệm vụ";
+                    const labelText = LABEL_TEXT[ev.label || "lecture"] || "Task";
 
                     return (
                       <div key={ev.id} className={`group flex items-start py-3 border-b border-gray-100 transition-opacity ${isDone ? 'opacity-60 bg-white' : 'opacity-100 hover:bg-gray-50 bg-white'}`}>
@@ -109,7 +109,7 @@ export default function TasksPage() {
                             {ev.course_id && <span>• Attached course</span>}
                             {ev.start_time && (
                               <>
-                                <span>• {new Date(ev.start_time).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</span>
+                                <span>• {new Date(ev.start_time).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</span>
                                 {isOverdue && <span className="text-red-600 font-medium">Overdue</span>}
                               </>
                             )}
@@ -121,7 +121,7 @@ export default function TasksPage() {
                           <button
                             onClick={() => setConfirmId(ev.id)}
                             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                            title="Xóa nhiệm vụ"
+                            title="Delete Task"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -138,7 +138,7 @@ export default function TasksPage() {
 
       {confirmId && toDelete && (
         <ConfirmDialog
-          message={`Bạn có chắc muốn xóa nhiệm vụ "${toDelete.title}" không?`}
+          message={`Are you sure you want to delete the task "${toDelete.title}"?`}
           onConfirm={() => deleteEvent(confirmId)}
           onCancel={() => setConfirmId(null)}
         />

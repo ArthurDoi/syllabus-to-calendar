@@ -20,7 +20,7 @@ function CallbackContent() {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ fontSize: 14, color: "#6b7280" }}>Đang xử lý đăng nhập Google...</div>
+      <div style={{ fontSize: 14, color: "#6b7280" }}>Login processing Google...</div>
     </div>
   );
 }

@@ -324,7 +324,7 @@ export default function CalendarPage() {
                     </button>
                     {syncStatus?.connected && syncStatus.last_synced_at && (
                       <span className="text-[10px] text-gray-400">
-                        Last sync: {new Date(syncStatus.last_synced_at).toLocaleString("vi-VN")}
+                        Last sync: {new Date(syncStatus.last_synced_at).toLocaleString("en-US")}
                       </span>
                     )}
                   </div>

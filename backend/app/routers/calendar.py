@@ -38,12 +38,12 @@ async def _get_sync_record(user_id, db: AsyncSession) -> GoogleCalendarSync:
     if not sync:
         raise HTTPException(
             status_code=400,
-            detail="Google Calendar chưa được kết nối. Hãy bấm 'Kết nối Google Calendar'.",
+            detail="Google Calendar not connected.",
         )
     return sync
 
 
-# ── Status
+# Status
 @router.get("/status", response_model=GoogleSyncStatusResponse)
 async def sync_status(
     db: AsyncSession = Depends(get_db),
@@ -60,7 +60,7 @@ async def sync_status(
     )
 
 
-# ── Sync tất cả events lên Google Calendar
+# Sync all events to Google Calendar
 @router.post("/sync", response_model=MessageResponse)
 async def sync_events_to_google(
     db: AsyncSession = Depends(get_db),
@@ -69,20 +69,20 @@ async def sync_events_to_google(
     sync = await _get_sync_record(current_user.id, db)
     access_token = await get_valid_google_token(sync, db)
 
-    # Lấy tất cả events chưa được sync (chưa có bản ghi CalendarEvent tương ứng)
+    # Get all events that have not been synced (no corresponding CalendarEvent record)
     result = await db.execute(
         select(Event, CalendarEvent)
         .outerjoin(CalendarEvent, CalendarEvent.event_id == Event.id)
         .where(
             Event.user_id == current_user.id,
-            CalendarEvent.id.is_(None),   # chưa sync
-            Event.start_time.is_not(None),  # phải có ngày
+            CalendarEvent.id.is_(None),
+            Event.start_time.is_not(None),
         )
     )
     rows = result.all()
 
     if not rows:
-        return MessageResponse(message="Không có sự kiện mới để sync (tất cả đã được sync trước đó)")
+        return MessageResponse(message="No new events to sync")
 
     calendar_id = sync.calendar_id or "primary"
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
@@ -133,21 +133,20 @@ async def sync_events_to_google(
                 err_status = err_msg.get('status', '') if isinstance(err_msg, dict) else ''
                 err_message = err_msg.get('message', resp.status_code) if isinstance(err_msg, dict) else str(err_msg)
                 logger.warning("Failed to sync event '%s': %s %s", event.title, resp.status_code, err_detail)
-                # 403 FORBIDDEN với insufficient scope → xóa sync record, buộc user kết nối lại
                 if resp.status_code == 403 and (
                     'insufficient' in err_message.lower()
                     or err_status in ('PERMISSION_DENIED',)
                 ):
-                    await db.commit()  # lưu events đã sync được trước đó
+                    await db.commit()
                     await db.delete(sync)
                     await db.commit()
                     logger.warning("Deleted GoogleCalendarSync for user %s due to insufficient scope", current_user.id)
                     raise HTTPException(
                         status_code=403,
                         detail=(
-                            "Google Calendar không đủ quyền ghi lịch (insufficientPermissions). "
-                            "Kết nối Google Calendar đã bị xóa. "
-                            "Vui lòng vào trang Calendar và bấm 'Kết nối Google Calendar' để cấp lại đầy đủ quyền."
+                            "Google Calendar does not have permission to write to the calendar (insufficientPermissions). "
+                            "Google Calendar connection has been deleted. "
+                            "Please go to the Calendar page and click 'Connect Google Calendar' to grant full permissions."
                         ),
                     )
                 errors.append(f"{event.title}: {err_message}")
@@ -155,13 +154,13 @@ async def sync_events_to_google(
     sync.last_synced_at = now_utc()
     await db.commit()
 
-    msg = f"Đã sync {synced}/{len(rows)} sự kiện lên Google Calendar."
+    msg = f"Synced {synced}/{len(rows)} events to Google Calendar."
     if errors:
-        msg += f" Lỗi ({len(errors)}): " + "; ".join(errors[:3])
+        msg += f" Errors ({len(errors)}): " + "; ".join(errors[:3])
     return MessageResponse(message=msg)
 
 
-# ── List calendar events
+# List calendar events
 @router.get("/events", response_model=list[CalendarEventResponse])
 async def list_calendar_events(
     db: AsyncSession = Depends(get_db),
@@ -184,4 +183,4 @@ async def disconnect_google(
     sync = await _get_sync_record(current_user.id, db)
     await db.delete(sync)
     await db.commit()
-    return MessageResponse(message="Google Calendar đã được ngắt kết nối")
+    return MessageResponse(message="Google Calendar disconnected")

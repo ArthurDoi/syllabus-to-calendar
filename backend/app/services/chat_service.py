@@ -2,11 +2,11 @@
 Chat Service — Function Calling pattern with Gemini.
 
 Flow:
-  1. User gửi câu hỏi
-  2. Gemini nhận câu hỏi + function declarations
-  3. Gemini quyết định gọi function nào (get_events, get_courses, ...)
-  4. Backend thực thi DB query, trả kết quả JSON cho Gemini
-  5. Gemini tổng hợp câu trả lời tự nhiên
+  1. User send question
+  2. Gemini nhận question + function declarations
+  3. Gemini decide to call function (get_events, get_courses, ...)
+  4. Backend execute DB query, return JSON result to Gemini
+  5. Gemini summarize natural answer
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ def _gemini_client() -> genai.Client:
 FUNCTION_DECLARATIONS = [
     gtypes.FunctionDeclaration(
         name="get_courses",
-        description="Lấy danh sách tất cả các khóa học/môn học của người dùng. Trả về thông tin: tên, mã, giảng viên, học kỳ, ngày bắt đầu/kết thúc.",
+        description="Get all courses/subjects of the user. Return information: name, code, instructor, term, start date/end date.",
         parameters=gtypes.Schema(
             type="OBJECT",
             properties={},
@@ -44,32 +44,32 @@ FUNCTION_DECLARATIONS = [
     ),
     gtypes.FunctionDeclaration(
         name="get_events",
-        description="Lấy danh sách các sự kiện/lịch trình (bài giảng, bài tập, kỳ thi, ngày nghỉ, v.v.) với các bộ lọc tùy chọn. Tham số label chấp nhận bất kỳ giá trị nào (exam, assignment, lecture, holiday, seminar, lab, project, v.v.).",
+        description="Get all events/schedules (lectures, assignments, exams, holidays, etc.) with optional filters. The label parameter accepts any value (exam, assignment, lecture, holiday, seminar, lab, project, etc.).",
         parameters=gtypes.Schema(
             type="OBJECT",
             properties={
-                "course_id": gtypes.Schema(type="STRING", description="ID của khóa học cụ thể (UUID). Chỉ dùng khi biết chính xác course_id."),
-                "label": gtypes.Schema(type="STRING", description="Loại sự kiện: exam, assignment, lecture, holiday, seminar, lab, project, hoặc bất kỳ label nào tồn tại. Không giới hạn giá trị."),
-                "month": gtypes.Schema(type="INTEGER", description="Tháng (1-12) để lọc theo start_time."),
-                "week_number": gtypes.Schema(type="INTEGER", description="Số tuần trong kế hoạch giảng dạy."),
-                "status": gtypes.Schema(type="STRING", description="Trạng thái: pending, in-progress, completed."),
-                "title_contains": gtypes.Schema(type="STRING", description="Tìm kiếm sự kiện có tiêu đề chứa chuỗi này (không phân biệt hoa thường)."),
+                "course_id": gtypes.Schema(type="STRING", description="ID of the specific course (UUID). Only use when the exact course_id is known."),
+                "label": gtypes.Schema(type="STRING", description="Event type: exam, assignment, lecture, holiday, seminar, lab, project, or any existing label. No value restrictions."),
+                "month": gtypes.Schema(type="INTEGER", description="Month (1-12) to filter by start_time."),
+                "week_number": gtypes.Schema(type="INTEGER", description="Week number in the teaching plan."),
+                "status": gtypes.Schema(type="STRING", description="Status: pending, in-progress, completed."),
+                "title_contains": gtypes.Schema(type="STRING", description="Search for events with titles containing this string (case-insensitive)."),
             },
         ),
     ),
     gtypes.FunctionDeclaration(
         name="get_upcoming_events",
-        description="Lấy các sự kiện sắp tới trong N ngày kể từ hôm nay (mặc định 7 ngày). Hữu ích cho câu hỏi 'tuần này có gì', 'sắp tới có deadline nào'.",
+        description="Get upcoming events in N days from today (default 7 days). Useful for questions like 'what's happening this week', 'what deadlines are coming up'.",
         parameters=gtypes.Schema(
             type="OBJECT",
             properties={
-                "days": gtypes.Schema(type="INTEGER", description="Số ngày kể từ hôm nay (mặc định: 7)."),
+                "days": gtypes.Schema(type="INTEGER", description="Number of days from today (default: 7)."),
             },
         ),
     ),
     gtypes.FunctionDeclaration(
         name="get_event_labels",
-        description="Lấy danh sách tất cả các loại label (phân loại) sự kiện tồn tại trong dữ liệu. Giúp biết có những loại sự kiện nào (ví dụ: exam, lecture, assignment, holiday, ...).",
+        description="Get all event labels (categories) that exist in the data. Helps to know what types of events exist (e.g., exam, lecture, assignment, holiday, ...).",
         parameters=gtypes.Schema(
             type="OBJECT",
             properties={},
@@ -77,7 +77,7 @@ FUNCTION_DECLARATIONS = [
     ),
     gtypes.FunctionDeclaration(
         name="sync_to_calendar",
-        description="Yêu cầu đồng bộ tất cả sự kiện chưa sync lên Google Calendar. Chỉ gọi khi user yêu cầu sync/đồng bộ lịch.",
+        description="Request to sync all events not yet synced to Google Calendar. Only call when the user requests to sync/synchronize the calendar.",
         parameters=gtypes.Schema(
             type="OBJECT",
             properties={},
@@ -86,7 +86,7 @@ FUNCTION_DECLARATIONS = [
 ]
 
 
-# ─── DB Query Functions ───────────────────────────────────────────────────────
+# DB Query Functions
 
 async def fn_get_courses(db: AsyncSession, user_id: UUID, **kwargs) -> list[dict]:
     result = await db.execute(
@@ -207,14 +207,14 @@ async def fn_get_event_labels(db: AsyncSession, user_id: UUID, **kwargs) -> list
 
 
 async def fn_sync_to_calendar(db: AsyncSession, user_id: UUID, **kwargs) -> dict:
-    """Trả về hướng dẫn — sync thực sự được thực hiện qua API endpoint."""
+    """Return instructions — sync is actually performed via API endpoint."""
     return {
-        "message": "Để đồng bộ Google Calendar, vui lòng sử dụng nút 'Sync' trên giao diện Calendar. "
-                   "Tôi có thể giúp bạn kiểm tra các sự kiện chưa sync nếu cần."
+        "message": "To sync Google Calendar, please use the 'Sync' button on the Calendar interface. "
+                   "I can help you check for unsynced events if needed."
     }
 
 
-# ─── Function Router ──────────────────────────────────────────────────────────
+# Function Router
 
 FUNCTION_MAP = {
     "get_courses": fn_get_courses,
@@ -244,20 +244,20 @@ async def _execute_function_call(
 
 # ─── System Prompt ────────────────────────────────────────────────────────────
 
-_SYSTEM_PROMPT = """Bạn là trợ lý học tập thông minh. Bạn tương tác với Database thông qua các Functions được cung cấp.
+_SYSTEM_PROMPT = """You are a smart academic assistant. You interact with the Database through the provided Functions.
 
-NGUYÊN TẮC:
-1. Khi user hỏi về lịch học, sự kiện, môn học → GỌI FUNCTION để truy vấn DB, KHÔNG tự bịa dữ liệu.
-2. Nếu cần biết có những loại sự kiện nào → gọi get_event_labels trước.
-3. Trả lời dựa trên KẾT QUẢ THỰC TẾ từ DB. Nếu không tìm thấy dữ liệu, thông báo rõ.
-4. Trả lời ngắn gọn, có cấu trúc (bullet list nếu nhiều item, ngày tháng cụ thể).
-5. Sử dụng tiếng Việt.
-6. Nếu user muốn sync lên Google Calendar → gọi sync_to_calendar.
-7. Ngày hôm nay: {today}
+RULES:
+1. When the user asks about schedule, events, courses → CALL FUNCTION to query DB, DO NOT make up data.
+2. If you need to know what types of events exist → call get_event_labels first.
+3. Answer based on ACTUAL RESULTS from DB. If no data is found, inform clearly.
+4. Answer briefly, with structure (bullet list if many items, specific dates).
+5. Use English.
+6. if user want to sync to Google Calendar → call sync_to_calendar.
+7. Today: {today}
 """
 
 
-# ─── Main Chat Handler ───────────────────────────────────────────────────────
+# Main Chat Handler
 
 async def handle_chat(
     db: AsyncSession,
@@ -336,11 +336,11 @@ async def handle_chat(
             continue
         else:
             # Model returned a text response — we're done
-            answer = part.text.strip() if part.text else "Không có phản hồi từ AI."
+            answer = part.text.strip() if part.text else "No response from AI."
             return {"answer": answer, "action_taken": action_taken}
 
     # If we exhausted iterations, return last response
     return {
-        "answer": "Đã xử lý xong. Vui lòng hỏi lại nếu cần thêm thông tin.",
+        "answer": "Done. Please ask again if you need more information.",
         "action_taken": action_taken,
     }

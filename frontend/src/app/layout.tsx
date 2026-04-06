@@ -4,12 +4,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Syllabus to Calendar",
-  description: "Chuyển đổi syllabus thành lịch học tự động",
+  description: "Automatically convert syllabus to study schedule",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi">
+    <html lang="en">
       <body>
         <AuthProvider>{children}</AuthProvider>
       </body>

@@ -20,7 +20,7 @@ UPLOAD_DIR = Path(settings.UPLOAD_DIR)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# ── Upload & Parse
+# Upload & Parse
 @router.post("/upload", response_model=SyllabusUploadResponse, status_code=201)
 async def upload_syllabus(
     background_tasks: BackgroundTasks,
@@ -44,7 +44,7 @@ async def upload_syllabus(
     file_path = UPLOAD_DIR / saved_name
     file_path.write_bytes(content)
 
-    # Create DB record với status "uploaded" – chưa parse AI
+    # Create DB record with status "uploaded" – not parsed AI yet
     upload = SyllabusUpload(
         user_id=current_user.id,
         course_id=uuid.UUID(course_id) if course_id else None,
@@ -59,15 +59,15 @@ async def upload_syllabus(
     await db.commit()
     await db.refresh(upload)
 
-    # KHÔNG tự động parse – user phải bấm "Trích xuất" để trigger
+    # Not automatically parsed – user must click "Extract" to trigger
     return upload
 
 
 async def _process_syllabus(upload_id, file_path: str, file_type: str, user_id):
-    """Background task: gọi AI parse rồi lưu JSON vào parsed_data.
-    KHÔNG tạo Course/Event ở đây – việc tạo xảy ra khi user xác nhận trong ReviewModal.
+    """Background task: call AI parse then save JSON to parsed_data.
+    Not creating Course/Event here – creation happens when user confirms in ReviewModal.
     """
-    from app.database import AsyncSessionLocal  # tránh circular import
+    from app.database import AsyncSessionLocal  # avoid circular import
 
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(SyllabusUpload).where(SyllabusUpload.id == upload_id))
@@ -77,9 +77,6 @@ async def _process_syllabus(upload_id, file_path: str, file_type: str, user_id):
 
         try:
             parsed: SyllabusParseResult = await parse_syllabus_image(file_path, file_type)
-
-            # Chỉ lưu kết quả parse – không tạo Course/Event
-            # User sẽ xem lại và xác nhận trong ReviewModal
             upload.status = "done"
             upload.parsed_data = parsed.model_dump(mode="json")
             await db.commit()
@@ -90,7 +87,7 @@ async def _process_syllabus(upload_id, file_path: str, file_type: str, user_id):
             await db.commit()
 
 
-# ── Trigger AI extraction manually
+# Trigger AI extraction manually
 @router.post("/{upload_id}/extract", response_model=SyllabusUploadResponse)
 async def extract_syllabus(
     upload_id: uuid.UUID,
@@ -111,7 +108,7 @@ async def extract_syllabus(
     if upload.status == "processing":
         raise HTTPException(status_code=409, detail="Already processing")
 
-    # Cập nhật status → processing
+    # Update status → processing
     upload.status = "processing"
     await db.commit()
     await db.refresh(upload)
@@ -199,7 +196,7 @@ async def delete_upload(
     if not upload:
         raise HTTPException(status_code=404, detail="Upload not found")
 
-    # Xóa file vật lý
+    # Delete physical file
     if upload.file_path and os.path.exists(upload.file_path):
         os.remove(upload.file_path)
 

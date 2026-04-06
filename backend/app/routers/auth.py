@@ -119,7 +119,6 @@ async def google_callback(code: str, state: str | None = None, db: AsyncSession 
     """Google redirect về đây với authorization code"""
     frontend_url = settings.FRONTEND_URL
 
-    # 1. Đổi code lấy token
     async with httpx.AsyncClient() as client:
         token_resp = await client.post(
             GOOGLE_TOKEN_URL,
@@ -138,7 +137,7 @@ async def google_callback(code: str, state: str | None = None, db: AsyncSession 
     if not google_access_token:
         return RedirectResponse(url=f"{frontend_url}/calendar?error=google_token_failed")
 
-    # 2. Determine which user to link calendar to
+    # Determine which user to link calendar to
     user = None
 
     # If state contains a JWT → link to that existing user (Connect Calendar flow)
@@ -171,7 +170,7 @@ async def google_callback(code: str, state: str | None = None, db: AsyncSession 
             db.add(user)
             await db.flush()
 
-    # 3. Lưu Google token cho Calendar sync
+    # Save Google token for Calendar sync
     result = await db.execute(
         select(GoogleCalendarSync).where(GoogleCalendarSync.user_id == user.id)
     )
@@ -191,12 +190,12 @@ async def google_callback(code: str, state: str | None = None, db: AsyncSession 
 
     await db.commit()
 
-    # 4. Redirect về frontend calendar page
-    # Nếu state có (Connect Calendar flow) → redirect thẳng về, token đã có
+    # Redirect to frontend calendar page
+    # If state has (Connect Calendar flow) → redirect straight back, token already has
     if state:
         return RedirectResponse(url=f"{frontend_url}/calendar?connected=1")
 
-    # Nếu Sign-in flow → trả token mới
+    # If Sign-in flow → return new token
     return TokenResponse(
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(user.id),
@@ -222,6 +221,4 @@ async def get_stats(current_user: User = Depends(get_current_user), db: AsyncSes
 
 @router.post("/logout", response_model=MessageResponse)
 async def logout():
-    # JWT là stateless; client xóa token phía mình
-    # Nếu cần blacklist token, implement Redis ở đây
     return MessageResponse(message="Logged out successfully")

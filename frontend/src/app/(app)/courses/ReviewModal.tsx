@@ -12,11 +12,11 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v
 function validateDate(dateStr: string | undefined, fieldName: string): string | null {
   if (!dateStr) return null;
   const [y, m, d] = dateStr.split("-").map(Number);
-  if (!y || !m || !d) return `${fieldName}: Định dạng ngày không hợp lệ (phải là YYYY-MM-DD).`;
+  if (!y || !m || !d) return `${fieldName}: Invalid date format (must be YYYY-MM-DD).`;
   const date = new Date(y, m - 1, d);
   if (date.getFullYear() !== y || date.getMonth() + 1 !== m || date.getDate() !== d) {
     const maxDay = new Date(y, m, 0).getDate();
-    return `${fieldName}: Ngày ${d} không tồn tại trong tháng ${m} (chỉ có ${maxDay} ngày).`;
+    return `${fieldName}: Day ${d} does not exist in month ${m} (only ${maxDay} days).`;
   }
   return null;
 }
@@ -30,7 +30,7 @@ interface Props {
 
 function EventCard({ ev, index, onChange, onRemove }: { ev: EventCreate; index: number; onChange: (i: number, patch: Partial<EventCreate>) => void; onRemove: (i: number) => void; }) {
   const cfg = LABEL_CONFIG[ev.label || "lecture"] || LABEL_CONFIG.lecture;
-  
+
   return (
     <div className="group relative flex flex-col gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all focus-within:border-blue-300 focus-within:ring-1 focus-within:ring-blue-100">
       <div className="absolute top-0 left-0 w-1.5 h-full rounded-l-xl opacity-90" style={{ backgroundColor: cfg.color }} />
@@ -39,7 +39,7 @@ function EventCard({ ev, index, onChange, onRemove }: { ev: EventCreate; index: 
           <input
             value={ev.title}
             onChange={e => onChange(index, { title: e.target.value })}
-            placeholder="Thêm tiêu đề..."
+            placeholder="Add title..."
             className="w-full text-base font-semibold text-gray-900 bg-transparent border-none rounded focus:ring-2 focus:ring-blue-100/50 outline-none p-1 -ml-1 transition-all"
           />
           <div className="flex flex-wrap items-center gap-3 mt-3">
@@ -77,7 +77,7 @@ function EventCard({ ev, index, onChange, onRemove }: { ev: EventCreate; index: 
             </div>
           </div>
         </div>
-        <button onClick={() => onRemove(index)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 flex-shrink-0" title="Xóa sự kiện">
+        <button onClick={() => onRemove(index)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 flex-shrink-0" title="Delete Event">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -85,7 +85,7 @@ function EventCard({ ev, index, onChange, onRemove }: { ev: EventCreate; index: 
         <textarea
           value={ev.description || ""}
           onChange={e => onChange(index, { description: e.target.value || undefined })}
-          placeholder="Thêm mô tả chi tiết (tuỳ chọn)..."
+          placeholder="Add detailed description (optional)..."
           rows={1}
           className="w-full text-[13px] text-gray-500 bg-transparent border-none outline-none resize-none p-1 -ml-1 focus:ring-2 focus:ring-blue-100/50 rounded transition-all placeholder:text-gray-400"
           onInput={(e) => {
@@ -112,7 +112,7 @@ function EventGroup({ labelKey, events, onChangeByGlobal, onRemoveByGlobal, onAd
           <span className="text-[11px] text-gray-500 font-semibold px-2 py-0.5 bg-gray-100 rounded-lg">{events.length}</span>
         </div>
         <button onClick={onAdd} className="flex items-center gap-1.5 text-[13px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 px-2 py-1 rounded-md transition-colors">
-          <Plus className="w-3.5 h-3.5" /> Thêm item
+          <Plus className="w-3.5 h-3.5" /> Add item
         </button>
       </div>
       <div className="grid grid-cols-1 gap-3">
@@ -165,20 +165,20 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
     setEvents(prev => prev.filter((_, idx) => idx !== i));
   };
   const handleAddEvent = (label: string) => {
-    setEvents(prev => [{ title: "Sự kiện mới", label: label as EventLabel, status: "pending" }, ...prev]);
+    setEvents(prev => [{ title: "New Event", label: label as EventLabel, status: "pending" }, ...prev]);
   };
 
   const handleConfirm = async () => {
     setError(null);
     const dateErrors = [
-      validateDate(form.start_date, "Ngày bắt đầu khóa học"),
-      validateDate(form.end_date, "Ngày kết thúc khóa học"),
+      validateDate(form.start_date, "Course Start Date"),
+      validateDate(form.end_date, "Course End Date"),
     ].filter(Boolean);
 
     events.forEach((ev, idx) => {
       if (ev.start_time) {
         const datePart = ev.start_time.split("T")[0];
-        const err = validateDate(datePart, `Sự kiện "${ev.title || ('#' + (idx + 1))}"`); // fixed
+        const err = validateDate(datePart, `Event "${ev.title || ('#' + (idx + 1))}"`);
         if (err) dateErrors.push(err);
       }
     });
@@ -225,7 +225,7 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
       }
       onCourseCreated(course);
     } catch (err: any) {
-      const msg = err?.response?.data?.detail || err.message || "Không thể lưu khóa học. Vui lòng thử lại.";
+      const msg = err?.response?.data?.detail || err.message || "Failed to save course. Please try again.";
       setError(typeof msg === "string" ? msg : JSON.stringify(msg));
     } finally {
       setLoading(false);
@@ -247,7 +247,7 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
   return (
     <div className="fixed inset-0 z-[300] bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="bg-white rounded-2xl w-full max-w-7xl h-[94vh] flex flex-col overflow-hidden shadow-2xl border border-gray-200/60 ring-1 ring-black/5">
-        
+
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
           <div className="flex items-center gap-3">
@@ -255,8 +255,8 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
               <LayoutTemplate className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Xem lại dữ liệu chiết xuất</h2>
-              <p className="text-[13px] text-gray-500 mt-0.5">So sánh và chỉnh sửa dữ liệu khóa học và sự kiện trước khi lưu.</p>
+              <h2 className="text-lg font-semibold text-gray-900">Review Extracted Data</h2>
+              <p className="text-[13px] text-gray-500 mt-0.5">Compare and edit course and event data before saving.</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors">
@@ -266,11 +266,11 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
 
         {/* Workspace */}
         <div className="flex flex-1 overflow-hidden bg-white">
-          
+
           {/* Document Preview Panel */}
           <div className="w-5/12 border-r border-gray-100 bg-gray-50/50 flex flex-col p-6 relative hidden md:flex">
             <div className="flex items-center justify-between mb-4 px-1">
-              <span className="text-sm font-semibold text-gray-900 flex items-center gap-2"><FileText className="w-4 h-4 text-gray-500" /> Tài liệu gốc</span>
+              <span className="text-sm font-semibold text-gray-900 flex items-center gap-2"><FileText className="w-4 h-4 text-gray-500" /> Original Document</span>
             </div>
             <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex items-center justify-center relative group">
               {imageUrl ? (
@@ -283,7 +283,7 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
               ) : (
                 <div className="flex flex-col items-center justify-center text-gray-400 gap-3">
                   {upload.file_type?.includes("pdf") ? <FileText className="w-10 h-10 opacity-30" /> : <Loader2 className="w-6 h-6 animate-spin" />}
-                  <span className="text-[13px] font-medium">{upload.file_type?.includes("pdf") ? "Bản xem trước PDF không khả dụng" : "Đang tải tệp tin..."}</span>
+                  <span className="text-[13px] font-medium">{upload.file_type?.includes("pdf") ? "PDF preview not available" : "Loading file..."}</span>
                 </div>
               )}
             </div>
@@ -292,21 +292,21 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
           {/* Editor Panel */}
           <div className="flex-1 flex flex-col w-full md:w-7/12 bg-white relative">
             <div className="flex-1 overflow-y-auto p-6 lg:p-8 scroll-smooth">
-              
+
               {/* Course Info Section */}
               <div className="mb-10">
                 <div className="flex items-center gap-2 mb-4">
                   <Info className="w-4 h-4 text-blue-600" />
-                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Thông tin khóa học</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Course Information</h3>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                   {[
-                    ["Tên môn học", "name", "text", "Ví dụ: Nhập môn Trí tuệ Nhân tạo"],
-                    ["Giảng viên", "instructor", "text", "Ví dụ: TS. Nguyễn Văn A"],
-                    ["Mã môn", "code", "text", "Ví dụ: INT3405"],
-                    ["Học kỳ", "term", "text", "Ví dụ: Học kỳ 1 2024-2025"],
-                    ["Ngày bắt đầu", "start_date", "date", ""],
-                    ["Ngày kết thúc", "end_date", "date", ""]
+                    ["Course Name", "name", "text", "Example: Introduction to AI"],
+                    ["Instructor", "instructor", "text", "Example: Dr. John Smith"],
+                    ["Course Code", "code", "text", "Example: CS101"],
+                    ["Term", "term", "text", "Example: Fall 2024"],
+                    ["Start Date", "start_date", "date", ""],
+                    ["End Date", "end_date", "date", ""]
                   ].map(([lbl, key, type, placeholder]) => (
                     <div key={key} className="space-y-1.5">
                       <label className="text-[13px] font-medium text-gray-700 ml-0.5">{lbl}</label>
@@ -320,7 +320,7 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
                     </div>
                   ))}
                   <div className="space-y-2 sm:col-span-2 mt-1">
-                    <label className="text-[13px] font-medium text-gray-700 ml-0.5">Màu nền khóa học</label>
+                    <label className="text-[13px] font-medium text-gray-700 ml-0.5">Course Background Color</label>
                     <div className="flex gap-3">
                       {["#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#475569", "#0891b2", "#ec4899"].map(c => (
                         <button
@@ -344,9 +344,9 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-blue-600" />
-                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Danh sách lịch trình</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Schedule List</h3>
                   </div>
-                  <span className="text-[13px] font-medium text-blue-700 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">{events.length} sự kiện chiết xuất</span>
+                  <span className="text-[13px] font-medium text-blue-700 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">{events.length} extracted events</span>
                 </div>
 
                 {events.length === 0 ? (
@@ -354,14 +354,14 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
                     <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-gray-100">
                       <Calendar className="w-6 h-6 text-gray-400" />
                     </div>
-                    <p className="text-[15px] font-medium text-gray-900 mb-1">Chưa có sự kiện nào</p>
-                    <p className="text-[13px] text-gray-500">Tài liệu này không chứa bất kỳ lịch trình nào.</p>
+                    <p className="text-[15px] font-medium text-gray-900 mb-1">No events</p>
+                    <p className="text-[13px] text-gray-500">This document contains no schedule.</p>
                   </div>
                 ) : (
                   <div>
                     {LABEL_ORDER.map(lbl => (
                       grouped[lbl]?.length > 0 ? (
-                         <EventGroup key={lbl} labelKey={lbl} events={grouped[lbl]} onChangeByGlobal={handleEventChange} onRemoveByGlobal={handleRemoveEvent} onAdd={() => handleAddEvent(lbl)} />
+                        <EventGroup key={lbl} labelKey={lbl} events={grouped[lbl]} onChangeByGlobal={handleEventChange} onRemoveByGlobal={handleRemoveEvent} onAdd={() => handleAddEvent(lbl)} />
                       ) : null
                     ))}
                   </div>
@@ -371,19 +371,19 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
 
             {/* Sticky Actions Footer */}
             <div className="px-6 lg:px-8 py-5 border-t border-gray-100 bg-white flex items-center justify-between flex-shrink-0 relative z-10 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
-               <div className="text-[13px] text-gray-500 hidden sm:block">
-                  {existingCourseId ? <span>Đang cập nhật <strong>khóa học hiện tại</strong></span> : <span>Sẽ xác nhận tạo mới với <strong>{events.length}</strong> nhiệm vụ</span>}
-               </div>
-               <div className="flex items-center gap-3 ml-auto">
-                  {error && <div className="text-[13px] text-red-600 font-medium mr-2 max-w-[200px] sm:max-w-xs truncate" title={error}>⚠️ {error}</div>}
-                  <button onClick={() => setConfirmDiscard(true)} className="px-4 py-2.5 text-[13px] font-semibold text-red-600 bg-white border border-red-200 hover:bg-red-50 hover:border-red-300 rounded-xl transition-all">
-                    Xóa tài liệu
-                  </button>
-                  <button onClick={handleConfirm} disabled={loading} className={`px-6 py-2.5 text-[13px] font-bold text-white rounded-xl transition-all flex items-center gap-2 ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow hover:-translate-y-0.5'}`}>
-                    {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {loading ? "Đang xử lý..." : (existingCourseId ? "Lưu cập nhật" : "Xác nhận & Tạo khóa học")}
-                  </button>
-               </div>
+              <div className="text-[13px] text-gray-500 hidden sm:block">
+                {existingCourseId ? <span>Updating <strong>current course</strong></span> : <span>Will confirm creating new with <strong>{events.length}</strong> tasks</span>}
+              </div>
+              <div className="flex items-center gap-3 ml-auto">
+                {error && <div className="text-[13px] text-red-600 font-medium mr-2 max-w-[200px] sm:max-w-xs truncate" title={error}>⚠️ {error}</div>}
+                <button onClick={() => setConfirmDiscard(true)} className="px-4 py-2.5 text-[13px] font-semibold text-red-600 bg-white border border-red-200 hover:bg-red-50 hover:border-red-300 rounded-xl transition-all">
+                  Delete Document
+                </button>
+                <button onClick={handleConfirm} disabled={loading} className={`px-6 py-2.5 text-[13px] font-bold text-white rounded-xl transition-all flex items-center gap-2 ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow hover:-translate-y-0.5'}`}>
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {loading ? "Processing..." : (existingCourseId ? "Save Update" : "Confirm & Create Course")}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -392,20 +392,20 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
       {/* Zoom Modal */}
       {isZoomed && imageUrl && (
         <div onClick={() => setIsZoomed(false)} className="fixed inset-0 z-[9999] bg-gray-900/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-12 cursor-zoom-out">
-          <img src={imageUrl} alt="Bản gốc" className="max-w-full max-h-full object-contain rounded-xl shadow-2xl ring-1 ring-white/10" />
+          <img src={imageUrl} alt="Original" className="max-w-full max-h-full object-contain rounded-xl shadow-2xl ring-1 ring-white/10" />
         </div>
       )}
 
       {/* Discard Confirmation */}
       {confirmDiscard && (
         <ConfirmDialog
-          message="Bạn có chắc muốn xóa vĩnh viễn tài liệu này? Mọi dữ liệu đã chiết xuất sẽ bị hủy bỏ ngay lập tức."
-          confirmLabel="Đồng ý xóa"
-          cancelLabel="Giữ lại"
+          message="Are you sure you want to permanently delete this document? All extracted data will be discarded immediately."
+          confirmLabel="Confirm Delete"
+          cancelLabel="Keep"
           onCancel={() => setConfirmDiscard(false)}
           onConfirm={async () => {
-            try { await syllabusService.delete(upload.id); onDiscarded?.(upload.id); } 
-            catch { setError("Xảy ra lỗi, không thể xóa tài liệu này."); setConfirmDiscard(false); }
+            try { await syllabusService.delete(upload.id); onDiscarded?.(upload.id); }
+            catch { setError("An error occurred, unable to delete this document."); setConfirmDiscard(false); }
           }}
         />
       )}

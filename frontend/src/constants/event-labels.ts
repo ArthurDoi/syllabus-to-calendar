@@ -7,10 +7,10 @@ export interface LabelConfig {
 }
 
 export const LABEL_CONFIG: Record<string, LabelConfig> = {
-  assignment: { color: "#1a73e8", bg: "#e8f0fe", label: "Bài tập" },
-  exam:       { color: "#d93025", bg: "#fce8e6", label: "Kiểm tra" },
-  lecture:    { color: "#1e8e3e", bg: "#e6f4ea", label: "Bài giảng" },
-  holiday:    { color: "#f29900", bg: "#fef7e0", label: "Nghỉ lễ" },
+  assignment: { color: "#1a73e8", bg: "#e8f0fe", label: "Assignment" },
+  exam:       { color: "#d93025", bg: "#fce8e6", label: "Exam" },
+  lecture:    { color: "#1e8e3e", bg: "#e6f4ea", label: "Lecture" },
+  holiday:    { color: "#f29900", bg: "#fef7e0", label: "Holiday" },
 };
 
 /** Quick lookup: label key → display color */

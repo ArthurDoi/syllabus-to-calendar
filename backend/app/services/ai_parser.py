@@ -9,34 +9,33 @@ from app.schemas import CourseCreate, EventCreate, SyllabusParseResult
 
 
 SYSTEM_PROMPT = """
-Bạn là trợ lý giáo dục thông minh. Nhiệm vụ của bạn là đọc hình ảnh syllabus môn học
-và trả về JSON với cấu trúc sau (không thêm markdown hay giải thích):
+You are a smart academic assistant. Your task is to read the syllabus image and return JSON with the following structure (do not add markdown or explanation):
 
 {
   "course_info": {
-    "name": "Tên môn học",
-    "code": "Mã môn (nếu có)",
-    "term": "Học kỳ (nếu có)",
-    "instructor": "Tên giảng viên (nếu có)",
-    "start_date": "ISO date hoặc null",
-    "end_date": "ISO date hoặc null",
+    "name": "Course name",
+    "code": "Course code (if any)",
+    "term": "Term (if any)",
+    "instructor": "Instructor name (if any)",
+    "start_date": "ISO date or null",
+    "end_date": "ISO date or null",
     "color": "#3b82f6",
     "icon": "Calendar"
   },
   "events": [
     {
-      "title": "Tên buổi học / bài tập / kỳ thi",
+      "title": "Course Name / Assignment / Exam / Task / ..etc",
       "label": "lecture|assignment|exam|holiday",
-      "description": "Mô tả ngắn nếu có",
-      "start_time": "ISO datetime hoặc null",
-      "end_time": "ISO datetime hoặc null",
+      "description": "Description if any",
+      "start_time": "ISO datetime or null",
+      "end_time": "ISO datetime or null",
       "status": "pending",
       "week_number": 1
     }
   ]
 }
 
-Nếu không tìm thấy thông tin, để null. Luôn trả về JSON thuần túy.
+if not found information, set to null. Always return pure JSON.
 """
 
 
@@ -59,7 +58,7 @@ async def parse_syllabus_image(file_path: str, file_type: str) -> SyllabusParseR
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as e:
-        raise ValueError(f"AI trả về JSON không hợp lệ: {e}. Response: {raw[:200]}")
+        raise ValueError(f"AI return JSON invalid: {e}. Response: {raw[:200]}")
 
     course_info = None
     if data.get("course_info"):
@@ -71,7 +70,7 @@ async def parse_syllabus_image(file_path: str, file_type: str) -> SyllabusParseR
         try:
             course_info = CourseCreate(**ci)
         except Exception:
-            # Nếu không parse được course_info thì bỏ qua, vẫn lấy events
+            # If course_info cannot be parsed, ignore it and still get events
             course_info = None
 
     events = []

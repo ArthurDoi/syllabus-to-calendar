@@ -19,12 +19,10 @@ GOOGLE_CALENDAR_BASE = "https://www.googleapis.com/calendar/v3"
 
 
 def now_utc() -> datetime:
-    """Trả về datetime UTC có timezone info (offset-aware)."""
     return datetime.now(timezone.utc)
 
 
 def ensure_aware(dt: datetime | None) -> datetime | None:
-    """Nếu datetime là offset-naive (không có tzinfo), gán UTC cho nó."""
     if dt is None:
         return None
     if dt.tzinfo is None:
@@ -33,7 +31,7 @@ def ensure_aware(dt: datetime | None) -> datetime | None:
 
 
 def to_google_datetime(dt: datetime | None) -> str | None:
-    """Chuyển datetime sang chuỗi RFC3339 mà Google API chấp nhận."""
+    """Change datetime to RFC3339 string that Google API accepts."""
     if dt is None:
         return None
     dt = ensure_aware(dt)
@@ -41,7 +39,7 @@ def to_google_datetime(dt: datetime | None) -> str | None:
 
 
 async def get_valid_google_token(sync: GoogleCalendarSync, db: AsyncSession) -> str:
-    """Tự động refresh Google access token nếu hết hạn."""
+    """Auto refresh Google access token if expired."""
     expires_at = ensure_aware(sync.token_expires_at)
     if expires_at and expires_at > now_utc() + timedelta(minutes=5):
         return sync.access_token
@@ -49,7 +47,7 @@ async def get_valid_google_token(sync: GoogleCalendarSync, db: AsyncSession) -> 
     if not sync.refresh_token:
         raise HTTPException(
             status_code=401,
-            detail="Google Calendar không còn kết nối. Hãy kết nối lại.",
+            detail="Google Calendar not connected. Please connect again.",
         )
 
     async with httpx.AsyncClient() as client:
@@ -73,13 +71,13 @@ async def get_valid_google_token(sync: GoogleCalendarSync, db: AsyncSession) -> 
             raise HTTPException(
                 status_code=401,
                 detail=(
-                    "Quyền truy cập Google Calendar đã hết hạn hoặc không đủ. "
-                    "Vui lòng ngắt kết nối và kết nối lại Google Calendar."
+                    "Google Calendar access permission has expired or is insufficient. "
+                    "Please disconnect and reconnect Google Calendar."
                 ),
             )
         raise HTTPException(
             status_code=401,
-            detail=f"Không thể làm mới token Google: {data.get('error_description', data.get('error', 'unknown'))}",
+            detail=f"Failed to refresh Google token: {data.get('error_description', data.get('error', 'unknown'))}",
         )
 
     sync.access_token = new_token
@@ -95,8 +93,8 @@ async def delete_google_calendar_event(
     db: AsyncSession,
 ) -> None:
     """
-    Xóa một event khỏi Google Calendar qua API.
-    Bỏ qua nếu event đã bị xóa trước đó (404).
+    Delete an event from Google Calendar via API.
+    Ignore if the event has been deleted before (404).
     """
     access_token = await get_valid_google_token(sync, db)
     calendar_id = sync.calendar_id or "primary"
@@ -111,7 +109,6 @@ async def delete_google_calendar_event(
     if resp.status_code == 204:
         logger.info("Deleted Google Calendar event %s", google_event_id)
     elif resp.status_code == 404:
-        # Event đã bị xóa tay trên Google Calendar → bỏ qua
         logger.warning("Google Calendar event %s not found (already deleted)", google_event_id)
     else:
         logger.error(

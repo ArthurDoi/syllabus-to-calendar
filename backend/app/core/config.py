@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
-    # Có thể dùng DATABASE_URL trực tiếp (Supabase) HOẶC ghép từ fields riêng lẻ
+    # Can use DATABASE_URL directly (Supabase) OR combine from individual fields
     DATABASE_URL: str | None = None
     DATABASE_HOSTNAME: str = ""
     DATABASE_PORT: int = 5432

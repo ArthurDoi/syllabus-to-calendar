@@ -19,7 +19,7 @@ router = APIRouter(prefix="/chat", tags=["AI Chat"])
 logger = logging.getLogger(__name__)
 
 
-# ─── Schemas ──────────────────────────────────────────────────────────────────
+# Schemas
 
 class ChatMessage(BaseModel):
     role: str   # "user" | "assistant"
@@ -36,7 +36,7 @@ class ChatResponse(BaseModel):
     action_taken: Optional[str] = None
 
 
-# ─── Endpoint ─────────────────────────────────────────────────────────────────
+# Endpoint
 
 @router.post("/", response_model=ChatResponse)
 async def chat(

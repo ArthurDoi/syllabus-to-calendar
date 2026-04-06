@@ -15,7 +15,7 @@ from . database import get_db, engine
 app = FastAPI(
     title=settings.APP_NAME,
     version="1.0.0",
-    description="Syllabus -> lịch trình",
+    description="Syllabus -> schedule",
 )
 
 @app.on_event("startup")

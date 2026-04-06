@@ -91,14 +91,14 @@ async def delete_course(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    # Lấy tất cả events của course này
+    # Get all events of this course
     events_result = await db.execute(
         select(Event).where(Event.course_id == course_id, Event.user_id == current_user.id)
     )
     events = events_result.scalars().all()
 
     if events:
-        # Lấy Google Calendar sync record (nếu có)
+        # Get Google Calendar sync record (if any)
         sync_result = await db.execute(
             select(GoogleCalendarSync).where(
                 GoogleCalendarSync.user_id == current_user.id
@@ -107,7 +107,7 @@ async def delete_course(
         sync = sync_result.scalar_one_or_none()
 
         for event in events:
-            # Kiểm tra event đã được sync lên Google Calendar chưa
+            # Check if event has been synced to Google Calendar
             cal_result = await db.execute(
                 select(CalendarEvent).where(CalendarEvent.event_id == event.id)
             )
@@ -130,7 +130,7 @@ async def delete_course(
             if cal_event:
                 await db.delete(cal_event)
 
-    # Xóa course (cascade xóa các Events còn lại trong DB)
+    # Delete course (cascade delete remaining Events in DB)
     await db.delete(course)
     await db.commit()
-    return MessageResponse(message="Course deleted")
+    return MessageResponse(message="Course deleted")

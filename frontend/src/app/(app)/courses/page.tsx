@@ -15,7 +15,7 @@ type View = "list" | "upload";
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function CoursesPage() {
-  
+
   const [view, setView] = useState<View>("list");
   const [dragging, setDragging] = useState(false);
   const [uploads, setUploads] = useState<SyllabusUpload[]>([]);
@@ -253,7 +253,7 @@ export default function CoursesPage() {
                   </div>
                   <div className="flex gap-2 items-center">
                     <Button onClick={() => handleExtract(u)} disabled={isExtracting} size="sm" variant={isExtracting ? "secondary" : "default"}>
-                      {isExtracting ? "⟳ Đang xử lý..." : "✨ Trích xuất"}
+                      {isExtracting ? "⟳ Processing..." : "✨ Extract"}
                     </Button>
                     <button onClick={() => syllabusService.delete(u.id).then(() => setUploads(prev => prev.filter(x => x.id !== u.id)))} className="text-gray-400 hover:text-gray-600 p-1">✕</button>
                   </div>
@@ -309,7 +309,7 @@ export default function CoursesPage() {
                 </div>
                 {u.status === "done" && <span className="text-xs font-medium text-gray-600">Views</span>}
                 {u.status === "error" && (
-                  <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); syllabusService.delete(u.id).then(() => setUploads(prev => prev.filter(x => x.id !== u.id))); }} className="text-red-600 hover:text-red-700 hover:bg-red-100">✕ Xóa</Button>
+                  <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); syllabusService.delete(u.id).then(() => setUploads(prev => prev.filter(x => x.id !== u.id))); }} className="text-red-600 hover:text-red-700 hover:bg-red-100">✕ Delete</Button>
                 )}
               </div>
             ))}

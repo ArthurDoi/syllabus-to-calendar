@@ -11,8 +11,8 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     name: Optional[str] = None
     
-    @field_validator("password") #decorator báo pydantic biết khi kiểm tra dữ liệu chạy hàm này riêng cho trường pass có thể áp dụng với các trường khác
-    @classmethod # nghĩa là phương thức thuộc class
+    @field_validator("password") # decorator báo pydantic biết khi kiểm tra dữ liệu chạy hàm này riêng cho trường pass có thể áp dụng với các trường khác
+    @classmethod # method thuộc class
     def password_strength(cls, value : str) -> str:
         if not any(c.isdigit() for c in value):
             raise ValueError("Password must contain at least one digit")
@@ -39,7 +39,6 @@ class GoogleCallbackRequest(BaseModel):
     code: str
     state: Optional[str] = None
 
-# user schemas
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -55,8 +54,6 @@ class UserResponse(UserBase):
 class UserUpdateRequest(BaseModel):
     name: Optional[str] = None
 
-
-# Course Schemas
 
 
 class CourseCreate(BaseModel):
@@ -87,8 +84,6 @@ class CourseResponse(CourseCreate):
 
     model_config = {"from_attributes": True}
 
-
-# Event Schemas
 
 
 class EventCreate(BaseModel):
@@ -145,8 +140,6 @@ class SyllabusParseResult(BaseModel):
     events: list[EventCreate] = []
     raw_text: Optional[str] = None
 
-# calendar Event Schemas
-
 class CalendarEventResponse(BaseModel):
     id : UUID
     title: str
@@ -164,7 +157,6 @@ class GoogleSyncStatusResponse(BaseModel):
     calendar_id: Optional[str]
     last_synced_at: Optional[datetime]
 
-#  User Stats Schemas
 
 class UserStatsResponse(BaseModel):
     current_streak: int

@@ -16,8 +16,8 @@ export function ConfirmDialog({
   message,
   onConfirm,
   onCancel,
-  confirmLabel = "Xóa",
-  cancelLabel = "Hủy",
+  confirmLabel = "Delete",
+  cancelLabel = "Cancel",
 }: ConfirmDialogProps) {
   return (
     <div style={{
@@ -31,7 +31,7 @@ export function ConfirmDialog({
         boxSizing: "border-box",
       }}>
         <div style={{ fontSize: 16, fontWeight: 500, color: "#202124", marginBottom: 16 }}>
-          Xác nhận xóa
+          Confirm Delete
         </div>
         <div style={{ fontSize: 14, color: "#5f6368", marginBottom: 24, lineHeight: 1.5 }}>
           {message}
