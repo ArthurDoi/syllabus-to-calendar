@@ -1,5 +1,5 @@
 # Syllabus to Calendar 🗓️
-
+## Domain: [https://syllabus-to-calendar-nine.vercel.app/]
 ## 📖 Project Overview
 **Syllabus to Calendar** is an application designed to automate the extraction of class schedules and assignment deadlines from your course syllabuses and synchronize them directly with your Google Calendar.
 
