@@ -354,6 +354,7 @@ npm run build
 ```
 
 ---
+<<<<<<< HEAD
 
 ## 🔒 Security Considerations
 
@@ -493,3 +494,6 @@ copies or substantial portions of the Software.
 **Last Updated:** April 10, 2026
 **Maintainer:** ARTHUR DOI / Organization  
 **Status:** ✅ Active Development
+=======
+*ARTHUR DOI.*
+>>>>>>> 8311aa6ccdca857815642f5a25e01ecc7b1f4849
