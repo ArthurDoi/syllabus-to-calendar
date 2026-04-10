@@ -50,45 +50,10 @@ The project is structured as a **production-ready monorepo** with decoupled Fron
 
 ---
 
-## �️ Technology Stack
-
-### Backend (Python/FastAPI)
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Framework** | FastAPI 0.111+ | Modern, async HTTP framework with automatic API docs |
-| | Uvicorn | ASGI server for high-performance request handling |
-| **Database** | PostgreSQL | Relational database with pgvector for embeddings |
-| | SQLAlchemy 2.0+ | ORM for database abstraction and query building |
-| | Alembic | Database schema versioning and migrations |
-| **AI/ML** | Google Gemini API | LLM for syllabus parsing and chat intelligence |
-| | pgvector | Vector storage for semantic search (future enhancement) |
-| **Authentication** | OAuth 2.0 | Google Sign-In integration |
-| | JWT (PyJWT) | Stateless session management |
-| | bcrypt | Password hashing and verification |
-| **External APIs** | Google Calendar API | Bidirectional calendar synchronization |
-| | Google Auth | OAuth token management |
-| **Async** | asyncpg | Async PostgreSQL driver |
-| | aiohttp/httpx | Async HTTP clients |
-| **Validation** | Pydantic v2 | Data validation and schema definition |
-| **DevOps** | Docker | Containerization for consistent environments |
-
-### Frontend (Next.js/React)
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Framework** | Next.js 16.1 | React meta-framework with SSR and API routes |
-| | React 19 | UI library with new Server Components support |
-| **Styling** | Tailwind CSS 4.2 | Utility-first CSS framework |
-| | Radix UI | Unstyled, accessible component library |
-| | Framer Motion | Animation library for smooth UI interactions |
-| **Calendar** | FullCalendar 6 | Rich calendar widget with multiple view modes |
-| **Forms** | React Hook Form 7.66 | Efficient form state management |
-| | Zod 4 | TypeScript-first schema validation |
-| **HTTP** | Axios | Promise-based HTTP client |
-| | NEXT_PUBLIC_API_URL | Environment-based API routing |
-| **Markdown** | react-markdown | Render markdown in chat responses |
-| **File Upload** | react-dropzone | Drag-and-drop file handling |
-| **Code Quality** | ESLint 9 | Code linting |
-| | TypeScript | Static type checking |
+🛠️ Technology Stack
+Backend: Python, FastAPI, PostgreSQL, SQLAlchemy, Google Gemini API, Docker.
+Frontend: Next.js, React, Tailwind CSS, FullCalendar, React Hook Form, Zod.
+Infrastructure: Render (Backend), Vercel (Frontend), Supabase/Neon (DB).
 
 ### Infrastructure & Deployment
 - **Local Development:** Docker Compose (PostgreSQL + Backend + Frontend)
