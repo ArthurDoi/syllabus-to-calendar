@@ -34,43 +34,78 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-3 sm:px-4 py-6 sm:py-10">
-      <div className="w-full max-w-sm bg-white rounded-2xl p-6 sm:p-8 shadow-lg">
-        <div className="flex items-center gap-2 mb-6 sm:mb-7">
-          <span className="bg-blue-600 text-white rounded-lg w-8 sm:w-8 h-8 sm:h-8 flex items-center justify-center text-lg flex-shrink-0">📘</span>
-          <span className="font-bold text-base sm:text-lg truncate">Syllabus to Calendar</span>
-        </div>
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-2xl p-8 sm:p-10 shadow-sm">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
+          <p className="text-gray-600 text-sm sm:text-base mb-6 sm:mb-8">Join us to get started</p>
 
-        <div className="flex border-b border-gray-200 mb-5 sm:mb-6">
-          <Link href="/auth/login" className="flex-1 py-2 text-center text-sm sm:text-base text-gray-600 border-b-2 border-transparent hover:text-gray-900 no-underline">Login</Link>
-          <div className="flex-1 py-2 text-center font-bold text-sm sm:text-base border-b-2 border-blue-600 text-blue-600">Register</div>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          {[["Full Name", "text", name, setName], ["Email", "email", email, setEmail],
-          ["Password", "password", password, setPassword], ["Confirm Password", "password", confirm, setConfirm]
-          ].map(([label, type, val, set]) => (
-            <div key={label as string} className="mb-3 sm:mb-4">
-              <label className="text-xs sm:text-sm font-medium block mb-1 sm:mb-2 text-gray-700">{label as string}</label>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4 sm:mb-5">
+              <label className="text-xs sm:text-sm font-medium block mb-1.5 text-gray-700">Full Name</label>
               <input
-                type={type as string}
-                value={val as string}
-                onChange={e => (set as (v: string) => void)(e.target.value)}
-                required={label !== "Họ tên"}
-                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm sm:text-base outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="John Doe"
+                required
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
               />
             </div>
-          ))}
 
-          {error && <div className="text-red-600 text-xs sm:text-sm mb-3">{error}</div>}
+            <div className="mb-4 sm:mb-5">
+              <label className="text-xs sm:text-sm font-medium block mb-1.5 text-gray-700">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-4 py-2 sm:py-2.5 text-sm sm:text-base font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed rounded-lg transition-colors"
-          >
-            {loading ? "Registering..." : "Register"}
-          </button>
-        </form>
+            <div className="mb-4 sm:mb-5">
+              <label className="text-xs sm:text-sm font-medium block mb-1.5 text-gray-700">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••••"
+                required
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
+              />
+            </div>
+
+            <div className="mb-6 sm:mb-7">
+              <label className="text-xs sm:text-sm font-medium block mb-1.5 text-gray-700">Confirm Password</label>
+              <input
+                type="password"
+                value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                placeholder="••••••••••"
+                required
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 hover:bg-white transition-colors"
+              />
+            </div>
+
+            {error && <div className="text-red-600 text-xs sm:text-sm mb-5 font-medium">{error}</div>}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full px-4 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white bg-gray-700 hover:bg-gray-800 disabled:bg-gray-500 disabled:cursor-not-allowed rounded-lg transition-colors"
+            >
+              {loading ? "Creating account..." : "Sign up"}
+            </button>
+          </form>
+        </div>
+
+        <p className="text-center text-sm text-gray-600 mt-5 sm:mt-6">
+          Already have an account?{" "}
+          <Link href="/auth/login" className="text-blue-600 font-semibold hover:text-blue-700 no-underline">
+            Sign in
+          </Link>
+        </p>
       </div>
     </div>
   );

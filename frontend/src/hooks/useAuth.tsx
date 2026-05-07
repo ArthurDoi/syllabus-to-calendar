@@ -19,23 +19,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Khôi phục session khi reload
+  // Khôi phục session khi reload - check từ cookies via API call
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      authService.me()
-        .then(setUser)
-        .catch(() => localStorage.clear())
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    const checkAuth = async () => {
+      try {
+        const me = await authService.me();
+        setUser(me);
+      } catch (err) {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    // Listen for token updates (e.g., from OAuth callback)
+    const handleTokenUpdate = () => {
+      setLoading(true);
+      checkAuth();
+    };
+
+    window.addEventListener("auth-tokens-updated", handleTokenUpdate);
+    return () => window.removeEventListener("auth-tokens-updated", handleTokenUpdate);
   }, []);
 
   const login = async (email: string, password: string) => {
-    const tokens = await authService.login({ username: email, password });
-    localStorage.setItem("access_token", tokens.access_token);
-    localStorage.setItem("refresh_token", tokens.refresh_token);
+    // Backend sets HttpOnly cookies automatically
+    // Just call login and let API handle cookies
+    await authService.login({ username: email, password });
+
+    // Fetch user info to verify login worked
     const me = await authService.me();
     setUser(me);
     router.push("/courses");
@@ -46,8 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await login(email, password);
   };
 
-  const logout = () => {
-    authService.logout();
+  const logout = async () => {
+    await authService.logout();
     setUser(null);
     router.push("/auth/login");
   };

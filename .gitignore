@@ -58,4 +58,6 @@ BE_old/
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+DEPLOYMENT.md
+SECURITY.md
 

@@ -3,16 +3,17 @@ import axios from "axios";
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1",
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,  // Send cookies automatically in all requests
 });
 
-// ── Request: gắn access token ─────────────────────────────────────────────────
+// ── Request: Add access token from cookies if available ─────────────────────
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access_token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Cookies are sent automatically with withCredentials: true
+  // No need to manually add Authorization header
   return config;
 });
 
-// ── Response: tự động refresh token khi 401 ──────────────────────────────────
+// ── Response: Auto-refresh on 401 ────────────────────────────────────────────
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
@@ -25,18 +26,19 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
       try {
-        const refresh = localStorage.getItem("refresh_token");
+        // Call refresh endpoint - backend will set new cookies
         const { data } = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
-          { refresh_token: refresh }
+          { refresh_token: "" },  // Backend gets token from cookies
+          { withCredentials: true }  // Send refresh token cookie
         );
-        localStorage.setItem("access_token", data.access_token);
-        localStorage.setItem("refresh_token", data.refresh_token);
-        original.headers.Authorization = `Bearer ${data.access_token}`;
+        // Backend sets new cookies, just retry original request
         return api(original);
       } catch {
-        localStorage.clear();
-        window.location.href = "/auth/login";
+        // Refresh failed, redirect to login ONLY if not already on the auth pages
+        if (!window.location.pathname.startsWith("/auth/")) {
+          window.location.href = "/auth/login?error=session_expired";
+        }
       }
     }
     return Promise.reject(error);

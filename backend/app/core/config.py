@@ -15,6 +15,11 @@ class Settings(BaseSettings):
 
 
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    
+    # Cookies (for production HttpOnly cookie storage)
+    COOKIE_SECURE: bool = False  # Set to True in production (HTTPS only)
+    COOKIE_SAMESITE: str = "Lax"  # or "Strict" for stricter security
+    COOKIE_DOMAIN: str | None = None  # Set to your domain in production
 
     # Google OAuth
     GOOGLE_CLIENT_ID: str

@@ -1,8 +1,8 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -40,6 +40,29 @@ GOOGLE_CALENDAR_SCOPES = [
 ]
 
 
+def set_auth_cookies(response, access_token: str, refresh_token: str):
+    """Helper to set HttpOnly cookies for production security"""
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        secure=settings.COOKIE_SECURE,
+        httponly=True,
+        samesite=settings.COOKIE_SAMESITE,
+        domain=settings.COOKIE_DOMAIN,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        secure=settings.COOKIE_SECURE,
+        httponly=True,
+        samesite=settings.COOKIE_SAMESITE,
+        domain=settings.COOKIE_DOMAIN,
+    )
+    return response
+
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == body.email))
@@ -72,14 +95,37 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return TokenResponse(
-        access_token=create_access_token(user.id),
-        refresh_token=create_refresh_token(user.id),
+    access_token = create_access_token(user.id)
+    refresh_token = create_refresh_token(user.id)
+    
+    response = JSONResponse(
+        content=TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+        ).model_dump()
     )
+    
+    # Set HttpOnly cookies for production security
+    response = set_auth_cookies(response, access_token, refresh_token)
+    return response
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(body: RefreshTokenRequest, db: AsyncSession = Depends(get_db)):
-    payload = decode_token(body.refresh_token)
+async def refresh_token(
+    request: Request,
+    body: RefreshTokenRequest | None = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """Refresh access token using refresh token from HttpOnly cookies or request body"""
+    # Get refresh token from cookies (production) or request body (backward compat)
+    refresh_token_str = request.cookies.get("refresh_token")
+    
+    if not refresh_token_str and body:
+        refresh_token_str = body.refresh_token
+    
+    if not refresh_token_str:
+        raise HTTPException(status_code=401, detail="No refresh token provided")
+    
+    payload = decode_token(refresh_token_str)
 
     if payload.get("type") != "refresh":
         raise HTTPException(status_code=401, detail="Invalid refresh token")
@@ -91,10 +137,19 @@ async def refresh_token(body: RefreshTokenRequest, db: AsyncSession = Depends(ge
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return TokenResponse(
-        access_token=create_access_token(user.id),
-        refresh_token=create_refresh_token(user.id),
+    access_token = create_access_token(user.id)
+    new_refresh_token = create_refresh_token(user.id)
+    
+    response = JSONResponse(
+        content=TokenResponse(
+            access_token=access_token,
+            refresh_token=new_refresh_token,
+        ).model_dump()
     )
+    
+    # Update HttpOnly cookies
+    response = set_auth_cookies(response, access_token, new_refresh_token)
+    return response
 
 
 @router.get("/google/login")
@@ -198,10 +253,14 @@ async def google_callback(code: str, state: str | None = None, db: AsyncSession 
     # Redirect to frontend
     # If state has (Connect Calendar flow) → redirect straight back
     if state:
-        return RedirectResponse(url=f"{frontend_url}/calendar?connected=1")
+        response = RedirectResponse(url=f"{frontend_url}/calendar?connected=1", status_code=302)
+        response = set_auth_cookies(response, access_token, refresh_token)
+        return response
 
-    # If Sign-in flow → redirect to callback page with tokens
-    return RedirectResponse(url=f"{frontend_url}/auth/callback?access_token={access_token}&refresh_token={refresh_token}")
+    # If Sign-in flow → redirect to dashboard with HttpOnly cookies
+    response = RedirectResponse(url=f"{frontend_url}/courses", status_code=302)
+    response = set_auth_cookies(response, access_token, refresh_token)
+    return response
 
 
 class GoogleExchangeRequest(BaseModel):
@@ -302,4 +361,22 @@ async def get_stats(current_user: User = Depends(get_current_user), db: AsyncSes
 
 @router.post("/logout", response_model=MessageResponse)
 async def logout():
-    return MessageResponse(message="Logged out successfully")
+    response = JSONResponse(
+        content=MessageResponse(message="Logged out successfully").model_dump()
+    )
+    # Clear HttpOnly cookies
+    response.delete_cookie(
+        key="access_token",
+        secure=settings.COOKIE_SECURE,
+        httponly=True,
+        samesite=settings.COOKIE_SAMESITE,
+        domain=settings.COOKIE_DOMAIN,
+    )
+    response.delete_cookie(
+        key="refresh_token",
+        secure=settings.COOKIE_SECURE,
+        httponly=True,
+        samesite=settings.COOKIE_SAMESITE,
+        domain=settings.COOKIE_DOMAIN,
+    )
+    return response

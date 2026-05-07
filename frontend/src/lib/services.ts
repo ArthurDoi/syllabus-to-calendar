@@ -29,13 +29,20 @@ export const authService = {
     return res.data;
   },
 
-  logout: () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+  logout: async () => {
+    try {
+      // Call backend logout to clear HttpOnly cookies
+      await api.post("/auth/logout");
+    } catch (err) {
+      // Ignore errors, just clear frontend state
+      console.error("Logout error:", err);
+    }
   },
 
   googleLogin: () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google/login`;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    const url = `${baseUrl}/auth/google/login`;
+    window.location.href = url;
   },
 };
 

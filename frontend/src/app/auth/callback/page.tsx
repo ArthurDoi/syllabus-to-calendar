@@ -1,26 +1,16 @@
 "use client";
 import { useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 
 function CallbackContent() {
-  const router = useRouter();
-  const params = useSearchParams();
-
   useEffect(() => {
-    const access = params.get("access_token");
-    const refresh = params.get("refresh_token");
-    if (access && refresh) {
-      localStorage.setItem("access_token", access);
-      localStorage.setItem("refresh_token", refresh);
-      router.push("/courses");
-    } else {
-      router.push("/auth/login?error=google_failed");
-    }
-  }, [params, router]);
+    // Backend sets HttpOnly cookies during redirect, just go to dashboard
+    // If there's an error in URL, backend would have redirected to login with error
+    window.location.href = "/courses";
+  }, []);
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ fontSize: 14, color: "#6b7280" }}>Login processing Google...</div>
+      <div style={{ fontSize: 14, color: "#6b7280" }}>Signing in...</div>
     </div>
   );
 }
@@ -29,7 +19,7 @@ export default function GoogleCallbackPage() {
   return (
     <Suspense fallback={
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ fontSize: 14, color: "#6b7280" }}>Đang tải...</div>
+        <div style={{ fontSize: 14, color: "#6b7280" }}>Loading...</div>
       </div>
     }>
       <CallbackContent />
