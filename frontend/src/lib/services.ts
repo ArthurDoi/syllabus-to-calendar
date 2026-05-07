@@ -1,4 +1,4 @@
-import api from "@/lib/api";
+import api, { tokenStorage } from "@/lib/api";
 import type {
   TokenResponse, UserResponse, LoginRequest, RegisterRequest,
   Course, CourseCreate,
@@ -16,6 +16,10 @@ export const authService = {
     const res = await api.post("/auth/login", form, {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
+    // Save tokens to localStorage for mobile compatibility (cross-site cookie blocked)
+    if (res.data?.access_token) {
+      tokenStorage.set(res.data.access_token, res.data.refresh_token || "");
+    }
     return res.data;
   },
 
@@ -31,11 +35,12 @@ export const authService = {
 
   logout: async () => {
     try {
-      // Call backend logout to clear HttpOnly cookies
       await api.post("/auth/logout");
     } catch (err) {
-      // Ignore errors, just clear frontend state
       console.error("Logout error:", err);
+    } finally {
+      // Always clear localStorage tokens
+      tokenStorage.clear();
     }
   },
 
