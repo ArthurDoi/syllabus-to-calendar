@@ -18,6 +18,7 @@ from uuid import UUID
 
 from google import genai
 from google.genai import types as gtypes
+from google.genai import errors as genai_errors
 from sqlalchemy import select, and_, func, extract, cast, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,7 +29,10 @@ logger = logging.getLogger(__name__)
 
 
 def _gemini_client() -> genai.Client:
-    return genai.Client(api_key=settings.GEMINI_API_KEY)
+    return genai.Client(
+        api_key=settings.GEMINI_API_KEY,
+        http_options=genai.types.HttpOptions(api_version="v1"),
+    )
 
 
 # Function Declarations for Gemini
@@ -289,55 +293,73 @@ async def handle_chat(
 
     action_taken = None
 
-    # Function calling loop (max 5 iterations to prevent infinite loops)
-    for _ in range(5):
-        response = client.models.generate_content(
-            model=settings.GEMINI_MODEL,
-            contents=contents,
-            config=gtypes.GenerateContentConfig(
-                system_instruction=system_prompt,
-                tools=[tools],
-                temperature=0.3,
-                max_output_tokens=2048,
-            ),
-        )
-
-        # Check if the model wants to call a function
-        candidate = response.candidates[0]
-        part = candidate.content.parts[0]
-
-        if part.function_call:
-            fn_call = part.function_call
-            fn_name = fn_call.name
-            fn_args = dict(fn_call.args) if fn_call.args else {}
-
-            logger.info("Gemini called function: %s(%s)", fn_name, fn_args)
-            action_taken = fn_name
-
-            # Execute the function
-            result = await _execute_function_call(fn_name, fn_args, db, user_id)
-
-            # Add the function call and result to contents for next turn
-            contents.append(candidate.content)
-            contents.append(
-                gtypes.Content(
-                    role="user",
-                    parts=[
-                        gtypes.Part(
-                            function_response=gtypes.FunctionResponse(
-                                name=fn_name,
-                                response={"result": result},
-                            )
-                        )
-                    ],
-                )
+    try:
+        # Function calling loop (max 5 iterations to prevent infinite loops)
+        for _ in range(5):
+            response = client.models.generate_content(
+                model=settings.GEMINI_MODEL,
+                contents=contents,
+                config=gtypes.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    tools=[tools],
+                    temperature=0.3,
+                    max_output_tokens=2048,
+                ),
             )
-            # Continue loop — Gemini may want to call another function or generate final answer
-            continue
-        else:
-            # Model returned a text response — we're done
-            answer = part.text.strip() if part.text else "No response from AI."
-            return {"answer": answer, "action_taken": action_taken}
+
+            # Check if the model wants to call a function
+            candidate = response.candidates[0]
+            part = candidate.content.parts[0]
+
+            if part.function_call:
+                fn_call = part.function_call
+                fn_name = fn_call.name
+                fn_args = dict(fn_call.args) if fn_call.args else {}
+
+                logger.info("Gemini called function: %s(%s)", fn_name, fn_args)
+                action_taken = fn_name
+
+                # Execute the function
+                result = await _execute_function_call(fn_name, fn_args, db, user_id)
+
+                # Add the function call and result to contents for next turn
+                contents.append(candidate.content)
+                contents.append(
+                    gtypes.Content(
+                        role="user",
+                        parts=[
+                            gtypes.Part(
+                                function_response=gtypes.FunctionResponse(
+                                    name=fn_name,
+                                    response={"result": result},
+                                )
+                            )
+                        ],
+                    )
+                )
+                # Continue loop — Gemini may want to call another function or generate final answer
+                continue
+            else:
+                # Model returned a text response — we're done
+                answer = part.text.strip() if part.text else "No response from AI."
+                return {"answer": answer, "action_taken": action_taken}
+
+    except genai_errors.ClientError as e:
+        error_msg = str(e)
+        if "User location is not supported" in error_msg or "FAILED_PRECONDITION" in error_msg:
+            logger.error("Gemini API location restriction: %s", error_msg)
+            return {
+                "answer": (
+                    "⚠️ The AI service is currently unavailable due to regional restrictions on the server. "
+                    "Please contact the administrator to configure a supported deployment region."
+                ),
+                "action_taken": None,
+            }
+        logger.error("Gemini API client error: %s", error_msg)
+        raise
+    except Exception as e:
+        logger.error("Unexpected error in handle_chat: %s", e)
+        raise
 
     # If we exhausted iterations, return last response
     return {
