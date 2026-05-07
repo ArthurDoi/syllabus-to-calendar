@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 def _gemini_client() -> genai.Client:
     return genai.Client(
         api_key=settings.GEMINI_API_KEY,
-        http_options=genai.types.HttpOptions(api_version="v1"),
+        http_options=genai.types.HttpOptions(api_version="v1beta"),
     )
 
 
