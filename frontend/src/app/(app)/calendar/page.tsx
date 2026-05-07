@@ -49,7 +49,7 @@ export default function CalendarPage() {
     const [courses, setCourses] = useState<Course[]>([]);
     const [coursesLoading, setCoursesLoading] = useState(true);
     const [calendarError, setCalendarError] = useState<string | null>(null);
-    
+
     // Google Sync State
     const [syncStatus, setSyncStatus] = useState<GoogleSyncStatus | null>(null);
     const [syncing, setSyncing] = useState(false);
@@ -65,9 +65,9 @@ export default function CalendarPage() {
                 setLoading(true);
                 const allEvents = await eventService.list();
                 if (courseId && courseId !== 'all') {
-                  setEvents(allEvents.filter(e => e.course_id === courseId));
+                    setEvents(allEvents.filter(e => e.course_id === courseId));
                 } else {
-                  setEvents(allEvents);
+                    setEvents(allEvents);
                 }
                 setCalendarError(null);
             } catch (error) {
@@ -79,18 +79,18 @@ export default function CalendarPage() {
         };
 
         fetchEvents();
-        calendarService.status().then(setSyncStatus).catch(() => {});
+        calendarService.status().then(setSyncStatus).catch(() => { });
 
         // Detect redirect back from Google OAuth
         const params = new URLSearchParams(window.location.search);
         if (params.get("connected") === "1") {
-          setSyncSuccess("Google Calendar connected successfully! Click Sync to sync.");
-          calendarService.status().then(setSyncStatus).catch(() => {});
-          window.history.replaceState({}, "", window.location.pathname);
+            setSyncSuccess("Google Calendar connected successfully! Click Sync to sync.");
+            calendarService.status().then(setSyncStatus).catch(() => { });
+            window.history.replaceState({}, "", window.location.pathname);
         }
         if (params.get("error")) {
-          setSyncError(`Connection failed: ${params.get("error")}`);
-          window.history.replaceState({}, "", window.location.pathname);
+            setSyncError(`Connection failed: ${params.get("error")}`);
+            window.history.replaceState({}, "", window.location.pathname);
         }
     }, [courseId]);
 
@@ -134,59 +134,59 @@ export default function CalendarPage() {
 
     const handleSync = async () => {
         setSyncError(null); setSyncSuccess(null);
-    
+
         // If not connected → redirect to Google OAuth with JWT as state (via Vercel callback)
         if (!syncStatus?.connected) {
-          const token = localStorage.getItem("access_token");
-          const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-          const callbackUrl = `${window.location.origin}/auth/google/callback`;
-          const scope = [
-            "openid",
-            "email",
-            "profile",
-            "https://www.googleapis.com/auth/calendar",
-          ].join(" ");
+            const token = localStorage.getItem("access_token");
+            const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+            const callbackUrl = `${window.location.origin}/auth/google/callback`;
+            const scope = [
+                "openid",
+                "email",
+                "profile",
+                "https://www.googleapis.com/auth/calendar",
+            ].join(" ");
 
-          if (GOOGLE_CLIENT_ID) {
-            // Production: build OAuth URL on frontend, callback goes to Vercel
-            const params = new URLSearchParams({
-              client_id: GOOGLE_CLIENT_ID,
-              redirect_uri: callbackUrl,
-              response_type: "code",
-              scope,
-              access_type: "offline",
-              prompt: "consent",
-              ...(token ? { state: token } : {}),
-            });
-            window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-          } else {
-            // Fallback: use backend login redirect (works locally)
-            const redirectUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/google/login${token ? `?state=${encodeURIComponent(token)}` : ""}`;
-            window.location.href = redirectUrl;
-          }
-          return;
+            if (GOOGLE_CLIENT_ID) {
+                // Production: build OAuth URL on frontend, callback goes to Vercel
+                const params = new URLSearchParams({
+                    client_id: GOOGLE_CLIENT_ID,
+                    redirect_uri: callbackUrl,
+                    response_type: "code",
+                    scope,
+                    access_type: "offline",
+                    prompt: "consent",
+                    ...(token ? { state: token } : {}),
+                });
+                window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+            } else {
+                // Fallback: use backend login redirect (works locally)
+                const redirectUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/google/login${token ? `?state=${encodeURIComponent(token)}` : ""}`;
+                window.location.href = redirectUrl;
+            }
+            return;
         }
 
-    
+
         setSyncing(true);
         try {
-          const result = await calendarService.sync();
-          setSyncSuccess(result.message || "Sync successfully!");
-          const status = await calendarService.status();
-          setSyncStatus(status);
-          
-          const allEvents = await eventService.list();
-          if (courseId && courseId !== 'all') {
-            setEvents(allEvents.filter(e => e.course_id === courseId));
-          } else {
-            setEvents(allEvents);
-          }
+            const result = await calendarService.sync();
+            setSyncSuccess(result.message || "Sync successfully!");
+            const status = await calendarService.status();
+            setSyncStatus(status);
+
+            const allEvents = await eventService.list();
+            if (courseId && courseId !== 'all') {
+                setEvents(allEvents.filter(e => e.course_id === courseId));
+            } else {
+                setEvents(allEvents);
+            }
         } catch (err: unknown) {
-          const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-            (err instanceof Error ? err.message : "Sync failed. Please try again.");
-          setSyncError(typeof msg === "string" ? msg : "Sync failed");
+            const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+                (err instanceof Error ? err.message : "Sync failed. Please try again.");
+            setSyncError(typeof msg === "string" ? msg : "Sync failed");
         } finally {
-          setSyncing(false);
+            setSyncing(false);
         }
     };
 
@@ -262,28 +262,27 @@ export default function CalendarPage() {
     };
 
     return (
-        <div className="p-6 h-full flex flex-col gap-3 bg-white">
+        <div className="p-3 sm:p-4 md:p-6 h-full flex flex-col gap-2 sm:gap-3 bg-white w-full">
             {/* Sync notifications */}
             {syncError && (
-              <div style={{ padding: "10px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, fontSize: 13, color: "#dc2626", display: "flex", justifyContent: "space-between" }}>
-                <span>{syncError}</span>
-                <button onClick={() => setSyncError(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626" }}>✕</button>
-              </div>
+                <div style={{ padding: "8px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, fontSize: "12px", color: "#dc2626", display: "flex", justifyContent: "space-between", gap: "8px" }}>
+                    <span className="truncate">{syncError}</span>
+                    <button onClick={() => setSyncError(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626", flexShrink: 0 }}>✕</button>
+                </div>
             )}
             {syncSuccess && (
-              <div style={{ padding: "10px 16px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, fontSize: 13, color: "#16a34a", display: "flex", justifyContent: "space-between" }}>
-                <span>{syncSuccess}</span>
-                <button onClick={() => setSyncSuccess(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#16a34a" }}>✕</button>
-              </div>
+                <div style={{ padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, fontSize: "12px", color: "#16a34a", display: "flex", justifyContent: "space-between", gap: "8px" }}>
+                    <span className="truncate">{syncSuccess}</span>
+                    <button onClick={() => setSyncSuccess(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#16a34a", flexShrink: 0 }}>✕</button>
+                </div>
             )}
 
-
-            <div className="flex flex-col items-end gap-1 pb-3 border-b border-gray-200">
+            <div className="flex flex-col gap-2 sm:gap-3 pb-2 sm:pb-3 border-b border-gray-200">
                 <Select
                     value={courseId ?? 'all'}
                     onValueChange={handleCourseChange}
                 >
-                    <SelectTrigger className="w-64">
+                    <SelectTrigger className="w-full sm:w-56 md:w-64 text-sm">
                         <SelectValue placeholder="Filter by course" />
                     </SelectTrigger>
                     <SelectContent>
@@ -304,82 +303,84 @@ export default function CalendarPage() {
                 </Select>
             </div>
 
-            <div className="flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleNavigate('prev')} className="h-8 w-8 p-0 text-gray-600">
-                        ‹
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={handleToday} className="h-8 px-4 text-gray-900 font-medium border border-gray-200 rounded-full">
-                        Today
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleNavigate('next')} className="h-8 w-8 p-0 text-gray-600">
-                        ›
-                    </Button>
-                    <span className="text-xl font-semibold text-gray-900 ml-2">{calendarTitle || 'Calendar'}</span>
-                </div>
-                
+            <div className="flex flex-col gap-2 sm:gap-3 pb-2 sm:pb-3">
+                <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-3">
+                    <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+                        <Button variant="ghost" size="sm" onClick={() => handleNavigate('prev')} className="h-7 sm:h-8 w-7 sm:w-8 p-0 text-gray-600 text-xs sm:text-sm">
+                            ‹
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={handleToday} className="h-7 sm:h-8 px-2 sm:px-4 text-gray-900 font-medium border border-gray-200 rounded-full text-xs sm:text-sm">
+                            Today
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleNavigate('next')} className="h-7 sm:h-8 w-7 sm:w-8 p-0 text-gray-600 text-xs sm:text-sm">
+                            ›
+                        </Button>
+                        <span className="text-base sm:text-lg md:text-xl font-semibold text-gray-900 ml-1 sm:ml-2 truncate">{calendarTitle || 'Calendar'}</span>
+                    </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center bg-gray-100 rounded-full p-1">
-                      {viewOptions.map((option) => (
-                          <button
-                              key={option.value}
-                              onClick={() => changeView(option.value)}
-                              className={cn(
-                                  "px-3 py-1.5 rounded-full text-xs font-semibold transition-all",
-                                  currentView === option.value
-                                      ? "bg-white shadow text-gray-900"
-                                      : "text-gray-500 hover:text-gray-900"
-                              )}
-                          >
-                              {option.label}
-                          </button>
-                      ))}
-                  </div>
 
-                  {/* Google Calendar Connect/Sync button */}
-                  <div className="flex flex-col items-end gap-1">
-                    <button onClick={handleSync} disabled={syncing}
-                      className={cn("px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-sm", {
-                        "bg-blue-600 text-white hover:bg-blue-700": syncStatus?.connected && !syncing,
-                        "bg-gray-800 text-white hover:bg-gray-900": !syncStatus?.connected && !syncing,
-                        "bg-gray-300 text-gray-600 cursor-not-allowed": syncing
-                      })}>
-                      {syncing ? "⟳ Syncing..." : syncStatus?.connected ? "🔄 Sync Google Calendar" : "🔗 Connect Google Calendar"}
-                    </button>
-                    {syncStatus?.connected && syncStatus.last_synced_at && (
-                      <span className="text-[10px] text-gray-400">
-                        Last sync: {new Date(syncStatus.last_synced_at).toLocaleString("en-US")}
-                      </span>
-                    )}
-                  </div>
+                    <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-wrap justify-end">
+                        <div className="flex items-center bg-gray-100 rounded-full p-0.5 sm:p-1 text-xs sm:text-sm">
+                            {viewOptions.map((option) => (
+                                <button
+                                    key={option.value}
+                                    onClick={() => changeView(option.value)}
+                                    className={cn(
+                                        "px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-semibold transition-all",
+                                        currentView === option.value
+                                            ? "bg-white shadow text-gray-900"
+                                            : "text-gray-500 hover:text-gray-900"
+                                    )}
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Google Calendar Connect/Sync button */}
+                        <div className="flex flex-col items-end gap-0.5 sm:gap-1">
+                            <button onClick={handleSync} disabled={syncing}
+                                className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shadow-sm whitespace-nowrap", {
+                                    "bg-blue-600 text-white hover:bg-blue-700": syncStatus?.connected && !syncing,
+                                    "bg-gray-800 text-white hover:bg-gray-900": !syncStatus?.connected && !syncing,
+                                    "bg-gray-300 text-gray-600 cursor-not-allowed": syncing
+                                })}>
+                                {syncing ? "⟳ Syncing..." : syncStatus?.connected ? "🔄 Sync" : "🔗 Connect"}
+                            </button>
+                            {syncStatus?.connected && syncStatus.last_synced_at && (
+                                <span className="text-[9px] sm:text-[10px] text-gray-400 text-right">
+                                    Last sync: {new Date(syncStatus.last_synced_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                </span>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 {calendarError && (
-                    <div className="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    <div className="w-full rounded-lg border border-red-200 bg-red-50 px-2 sm:px-3 py-2 text-xs sm:text-sm text-red-700">
                         {calendarError}
                     </div>
                 )}
             </div>
 
-            <div className="flex flex-1 gap-6 min-h-0">
-                <Card className="p-4 bg-white border border-gray-200 flex-1 min-w-0 shadow-sm relative overflow-hidden">
+            <div className="flex flex-1 gap-2 sm:gap-3 md:gap-6 min-h-0 flex-col md:flex-row">
+                <Card className="p-2 sm:p-3 md:p-4 bg-white border border-gray-200 flex-1 min-w-0 shadow-sm relative overflow-hidden w-full">
                     {loading && (
                         <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10">
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <Loader2 className="w-4 h-4 animate-spin" />
+                            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
                                 Loading events
                             </div>
                         </div>
                     )}
                     {!loading && events.length === 0 && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-gray-500 gap-2 z-10 bg-white/90">
-                            <CalendarIcon className="w-8 h-8 text-gray-300" />
-                            <p className="font-medium">
+                            <CalendarIcon className="w-6 h-6 sm:w-8 sm:h-8 text-gray-300" />
+                            <p className="font-medium text-xs sm:text-base">
                                 {courseId && courseId !== 'all' ? 'No events for this course yet' : 'No events scheduled'}
                             </p>
                             {courses.length > 0 && (
-                                <p className="text-sm">Try selecting another course or add new events.</p>
+                                <p className="text-xs sm:text-sm">Try selecting another course or add new events.</p>
                             )}
                         </div>
                     )}

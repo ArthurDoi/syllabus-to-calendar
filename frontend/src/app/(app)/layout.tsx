@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Home, ListTodo, LogOut, ChevronDown, Bot, Eye, EyeOff, Flame, Trophy } from "lucide-react";
+import { Calendar, Home, ListTodo, LogOut, ChevronDown, Bot, Eye, EyeOff, Flame, Trophy, Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,16 +21,24 @@ function TopNav() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement | null>(null);
+  const mobileMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setProfileMenuOpen(false);
       }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+        setMobileMenuOpen(false);
+      }
     };
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setProfileMenuOpen(false);
+      if (event.key === "Escape") {
+        setProfileMenuOpen(false);
+        setMobileMenuOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleEscape);
@@ -45,19 +53,19 @@ function TopNav() {
   const initials = displayName.split(" ").filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join("") || "U";
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50 flex items-center justify-between px-6">
+    <div className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50 flex items-center justify-between px-3 sm:px-6">
       {/* Left: Logo and App Name */}
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
           <Calendar className="w-5 h-5 text-white" />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold text-gray-900">Syllabus to Calendar</span>
+        <div className="hidden sm:flex items-center gap-2">
+          <span className="text-base sm:text-lg font-semibold text-gray-900 truncate">Syllabus to Calendar</span>
         </div>
       </div>
 
-      {/* Center: Navigation Links */}
-      <div className="flex items-center gap-1">
+      {/* Center: Navigation Links (Desktop Only) */}
+      <div className="hidden md:flex items-center gap-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname.startsWith(item.href);
@@ -66,42 +74,55 @@ function TopNav() {
               <Button
                 variant="ghost"
                 className={cn(
-                  "h-9 px-4 rounded-md",
+                  "h-9 px-3 lg:px-4 rounded-md text-sm",
                   isActive ? "bg-gray-100 text-gray-900 font-medium" : "text-gray-600 hover:bg-gray-50"
                 )}
               >
-                <Icon className="w-4 h-4 mr-2" />
-                {item.label}
+                <Icon className="w-4 h-4 mr-1 lg:mr-2" />
+                <span className="hidden lg:inline">{item.label}</span>
               </Button>
             </Link>
           );
         })}
       </div>
 
-      {/* Right: Profile */}
-      <div className="flex items-center">
+      {/* Right: Profile and Mobile Menu */}
+      <div className="flex items-center gap-2">
+        {/* Mobile Menu Button */}
+        <button
+          className="md:hidden p-2 hover:bg-gray-100 rounded-md transition-colors"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? (
+            <X className="w-5 h-5 text-gray-600" />
+          ) : (
+            <Menu className="w-5 h-5 text-gray-600" />
+          )}
+        </button>
+
+        {/* Profile Menu */}
         <div className="relative" ref={profileRef}>
           <button
             type="button"
             onClick={() => setProfileMenuOpen((prev) => !prev)}
             className={cn(
-              "flex items-center gap-3 rounded-2xl px-3 py-2 border border-gray-200 bg-white shadow-sm",
-              "hover:shadow-md transition-all min-w-[180px] focus:outline-none focus:ring-2 focus:ring-purple-400"
+              "flex items-center gap-2 sm:gap-3 rounded-2xl px-2 sm:px-3 py-2 border border-gray-200 bg-white shadow-sm",
+              "hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-purple-400"
             )}
           >
-            <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 font-semibold flex items-center justify-center border border-gray-200">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-100 text-gray-600 font-semibold flex items-center justify-center border border-gray-200 text-sm flex-shrink-0">
               {initials}
             </div>
-            <div className="text-left">
-              <div className="text-[13px] font-semibold text-gray-900 truncate max-w-[120px]">
+            <div className="hidden sm:block text-left">
+              <div className="text-xs sm:text-[13px] font-semibold text-gray-900 truncate max-w-[120px]">
                 {displayName}
               </div>
             </div>
-            <ChevronDown className={cn("w-4 h-4 text-gray-500 transition-transform", profileMenuOpen && "rotate-180")} />
+            <ChevronDown className={cn("w-4 h-4 text-gray-500 transition-transform hidden sm:block", profileMenuOpen && "rotate-180")} />
           </button>
 
           {profileMenuOpen && (
-            <div className="absolute right-0 mt-3 w-64 bg-white border border-gray-200 rounded-2xl shadow-xl py-3 z-50">
+            <div className="absolute right-0 mt-3 w-56 sm:w-64 bg-white border border-gray-200 rounded-2xl shadow-xl py-3 z-50">
               <div className="px-4 pb-3 border-b border-gray-100">
                 <p className="text-sm font-semibold text-gray-900">{displayName}</p>
                 <p className="text-xs text-gray-500 truncate">{displayEmail}</p>
@@ -122,6 +143,37 @@ function TopNav() {
           )}
         </div>
       </div>
+
+      {/* Mobile Navigation Menu */}
+      {mobileMenuOpen && (
+        <div
+          className="absolute top-16 left-0 right-0 bg-white border-b border-gray-200 md:hidden z-40"
+          ref={mobileMenuRef}
+        >
+          <div className="px-3 py-2 space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname.startsWith(item.href);
+              return (
+                <Link key={item.href} href={item.href}>
+                  <button
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm",
+                      isActive
+                        ? "bg-gray-100 text-gray-900 font-medium"
+                        : "text-gray-600 hover:bg-gray-50"
+                    )}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </button>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -168,7 +220,7 @@ function Sidebar() {
   const overdueDash = (overduePercent / 100) * circumference;
 
   return (
-    <div className="w-80 bg-white border-r border-gray-200 flex flex-col h-full">
+    <div className="hidden lg:flex w-80 bg-white border-r border-gray-200 flex-col h-full">
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900">Summary</h2>
@@ -260,9 +312,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 flex-col md:flex-row">
       <TopNav />
-      <div className="flex w-full pt-16">
+      <div className="flex w-full pt-16 overflow-hidden">
         {!pathname.startsWith('/calendar') && !pathname.startsWith('/tasks') && <Sidebar />}
         <div className="flex-1 overflow-y-auto bg-gray-50 flex flex-col">
           <main className="flex-1">

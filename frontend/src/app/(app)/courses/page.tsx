@@ -106,15 +106,15 @@ export default function CoursesPage() {
 
   if (view === "list") {
     return (
-      <div className="p-6 max-w-6xl mx-auto">
-        <div className="mb-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-500 mb-2">
+      <div className="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto w-full">
+        <div className="mb-4 sm:mb-6">
+          <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-500 mb-1 sm:mb-2">
                 Courses
               </p>
-              <h1 className="text-3xl font-bold text-gray-900">Courses</h1>
-              <p className="text-sm text-gray-500 mt-1">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Courses</h1>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
                 {courses.length === 0
                   ? 'Upload a syllabus or add a course manually to start planning.'
                   : `Tracking ${courses.length} ${courses.length === 1 ? 'course' : 'courses'} across the term.`}
@@ -122,7 +122,7 @@ export default function CoursesPage() {
             </div>
             <Button
               onClick={() => setView("upload")}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all"
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg transition-all text-sm"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Course
@@ -131,18 +131,18 @@ export default function CoursesPage() {
         </div>
 
         {courses.length === 0 ? (
-          <Card className="p-12 bg-gradient-to-br from-blue-50 via-white to-purple-50 border border-gray-200">
+          <Card className="p-6 sm:p-8 md:p-12 bg-gradient-to-br from-blue-50 via-white to-purple-50 border border-gray-200">
             <div className="text-center">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
-                <Plus className="w-10 h-10 text-white" />
+              <div className="w-16 sm:w-20 h-16 sm:h-20 mx-auto mb-3 sm:mb-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
+                <Plus className="w-8 sm:w-10 h-8 sm:h-10 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No courses yet</h3>
-              <p className="text-sm text-gray-600 mb-6 max-w-md mx-auto">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">No courses yet</h3>
+              <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6 max-w-md mx-auto">
                 Get started by uploading your first course syllabus or creating a course manually.
               </p>
               <Button
                 onClick={() => setView("upload")}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all"
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transition-all text-sm"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Your First Course
@@ -150,7 +150,7 @@ export default function CoursesPage() {
             </div>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {courses.map((course) => (
               <CourseCard key={course.id} course={course} onEdit={c => setSelectedCourse(c)} onDeleted={id => setCourses(prev => prev.filter(c => c.id !== id))} />
             ))}
@@ -171,22 +171,22 @@ export default function CoursesPage() {
 
   // ── UPLOAD VIEW (Bản gốc giữ nguyên) ────────────────────────────────────────
   return (
-    <div className="p-6 max-w-6xl mx-auto min-h-screen">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-500 mb-2">Courses</p>
-          <h1 className="text-3xl font-bold text-gray-900">Upload Syllabus</h1>
-          <p className="text-sm text-gray-500 mt-1">Upload your syllabus files and extract course schedule with AI.</p>
+    <div className="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto min-h-screen w-full">
+      <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-500 mb-1 sm:mb-2">Courses</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Upload Syllabus</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">Upload your syllabus files and extract course schedule with AI.</p>
         </div>
-        <Button onClick={() => { setView("list"); setUploadError(null); setPendingFiles([]); }} variant="outline">
+        <Button onClick={() => { setView("list"); setUploadError(null); setPendingFiles([]); }} variant="outline" className="w-full sm:w-auto text-sm">
           ← Back
         </Button>
       </div>
 
       {uploadError && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 flex justify-between items-center">
-          <span>❌ {uploadError}</span>
-          <button onClick={() => setUploadError(null)} className="text-red-500 hover:text-red-700">✕</button>
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs sm:text-sm text-red-600 flex justify-between items-center gap-2">
+          <span className="truncate">❌ {uploadError}</span>
+          <button onClick={() => setUploadError(null)} className="text-red-500 hover:text-red-700 flex-shrink-0">✕</button>
         </div>
       )}
 
@@ -196,7 +196,7 @@ export default function CoursesPage() {
         onDragLeave={() => setDragging(false)}
         onDrop={e => { e.preventDefault(); setDragging(false); stageFiles(e.dataTransfer.files); }}
         onClick={() => inputRef.current?.click()}
-        className={cn("border-2 border-dashed rounded-xl p-14 text-center cursor-pointer transition-all mb-5", dragging ? "border-purple-500 bg-purple-50" : "border-gray-300 bg-white shadow-sm")}
+        className={cn("border-2 border-dashed rounded-xl p-6 sm:p-10 md:p-14 text-center cursor-pointer transition-all mb-4 sm:mb-5", dragging ? "border-purple-500 bg-purple-50" : "border-gray-300 bg-white shadow-sm")}
       >
         <input ref={inputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp" className="hidden"
           onChange={e => { stageFiles(e.target.files); e.target.value = ""; }} />

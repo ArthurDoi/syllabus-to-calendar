@@ -191,16 +191,17 @@ async def google_callback(code: str, state: str | None = None, db: AsyncSession 
 
     await db.commit()
 
-    # Redirect to frontend calendar page
-    # If state has (Connect Calendar flow) → redirect straight back, token already has
+    # Generate tokens for frontend
+    access_token = create_access_token(user.id)
+    refresh_token = create_refresh_token(user.id)
+
+    # Redirect to frontend
+    # If state has (Connect Calendar flow) → redirect straight back
     if state:
         return RedirectResponse(url=f"{frontend_url}/calendar?connected=1")
 
-    # If Sign-in flow → return new token
-    return TokenResponse(
-        access_token=create_access_token(user.id),
-        refresh_token=create_refresh_token(user.id),
-    )
+    # If Sign-in flow → redirect to callback page with tokens
+    return RedirectResponse(url=f"{frontend_url}/auth/callback?access_token={access_token}&refresh_token={refresh_token}")
 
 
 class GoogleExchangeRequest(BaseModel):

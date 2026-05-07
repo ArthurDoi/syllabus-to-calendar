@@ -41,21 +41,21 @@ export default function TasksPage() {
   const toDelete = confirmId ? events.find(e => e.id === confirmId) : null;
 
   return (
-    <div className="p-6 h-full flex flex-col gap-3 bg-white">
+    <div className="p-3 sm:p-4 md:p-6 h-full flex flex-col gap-2 sm:gap-3 bg-white w-full">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-gray-200">
+      <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-3 pb-2 sm:pb-3 border-b border-gray-200">
         <div className="flex items-center gap-2">
-          <ListTodo className="w-5 h-5 text-gray-700" />
-          <h1 className="text-xl font-semibold text-gray-900">Your tasks</h1>
+          <ListTodo className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700 flex-shrink-0" />
+          <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Your tasks</h1>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex flex-1 gap-6 min-h-0">
-        <Card className="p-4 bg-white border border-gray-200 flex-1 min-w-0 shadow-sm relative overflow-hidden flex flex-col">
+      <div className="flex flex-1 gap-3 sm:gap-4 md:gap-6 min-h-0 flex-col md:flex-row">
+        <Card className="p-3 sm:p-4 bg-white border border-gray-200 flex-1 min-w-0 shadow-sm relative overflow-hidden flex flex-col w-full">
           {loading && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Loading...
               </div>
@@ -64,16 +64,16 @@ export default function TasksPage() {
 
           {!loading && events.length === 0 && (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-gray-500 gap-2 z-10 bg-white/90">
-              <CheckCircle2 className="w-8 h-8 text-gray-300" />
-              <p className="font-medium">No tasks found</p>
-              <p className="text-sm">You have completed all tasks or have not added any new tasks.</p>
+              <CheckCircle2 className="w-6 h-6 sm:w-8 sm:h-8 text-gray-300" />
+              <p className="font-medium text-sm sm:text-base">No tasks found</p>
+              <p className="text-xs sm:text-sm">You have completed all tasks or have not added any new tasks.</p>
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto pr-2">
+          <div className="flex-1 overflow-y-auto pr-1 sm:pr-2">
             {Object.entries(grouped).map(([day, items]) => (
-              <div key={day} className="mt-6 first:mt-2">
-                <div className="py-2 text-sm font-medium text-gray-900 flex items-center gap-2">
+              <div key={day} className="mt-4 sm:mt-6 first:mt-1 sm:first:mt-2">
+                <div className="py-1 sm:py-2 text-xs sm:text-sm font-medium text-gray-900 flex items-center gap-2">
                   {day}
                   <span className="text-xs text-gray-500 font-normal">({items.length})</span>
                 </div>

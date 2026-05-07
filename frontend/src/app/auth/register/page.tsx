@@ -33,34 +33,41 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f9fafb" }}>
-      <div style={{ width: 400, background: "#fff", borderRadius: 16, padding: "36px 32px", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28 }}>
-          <span style={{ background: "#2563eb", color: "#fff", borderRadius: 8, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center" }}>📘</span>
-          <span style={{ fontWeight: 700, fontSize: 16 }}>Syllabus to Calendar</span>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-3 sm:px-4 py-6 sm:py-10">
+      <div className="w-full max-w-sm bg-white rounded-2xl p-6 sm:p-8 shadow-lg">
+        <div className="flex items-center gap-2 mb-6 sm:mb-7">
+          <span className="bg-blue-600 text-white rounded-lg w-8 sm:w-8 h-8 sm:h-8 flex items-center justify-center text-lg flex-shrink-0">📘</span>
+          <span className="font-bold text-base sm:text-lg truncate">Syllabus to Calendar</span>
         </div>
 
-        <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb", marginBottom: 24 }}>
-          <Link href="/auth/login" style={{ flex: 1, padding: "8px 0", textAlign: "center", fontSize: 14, color: "#6b7280", borderBottom: "2px solid transparent", textDecoration: "none" }}>Login</Link>
-          <div style={{ flex: 1, padding: "8px 0", textAlign: "center", fontWeight: 700, fontSize: 14, borderBottom: "2px solid #2563eb", color: "#2563eb" }}>Register</div>
+        <div className="flex border-b border-gray-200 mb-5 sm:mb-6">
+          <Link href="/auth/login" className="flex-1 py-2 text-center text-sm sm:text-base text-gray-600 border-b-2 border-transparent hover:text-gray-900 no-underline">Login</Link>
+          <div className="flex-1 py-2 text-center font-bold text-sm sm:text-base border-b-2 border-blue-600 text-blue-600">Register</div>
         </div>
 
         <form onSubmit={handleSubmit}>
           {[["Full Name", "text", name, setName], ["Email", "email", email, setEmail],
           ["Password", "password", password, setPassword], ["Confirm Password", "password", confirm, setConfirm]
           ].map(([label, type, val, set]) => (
-            <div key={label as string} style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 13, fontWeight: 500, display: "block", marginBottom: 5, color: "#374151" }}>{label as string}</label>
-              <input type={type as string} value={val as string} onChange={e => (set as (v: string) => void)(e.target.value)}
+            <div key={label as string} className="mb-3 sm:mb-4">
+              <label className="text-xs sm:text-sm font-medium block mb-1 sm:mb-2 text-gray-700">{label as string}</label>
+              <input
+                type={type as string}
+                value={val as string}
+                onChange={e => (set as (v: string) => void)(e.target.value)}
                 required={label !== "Họ tên"}
-                style={{ width: "100%", padding: "9px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14, outline: "none" }} />
+                className="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm sm:text-base outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
           ))}
 
-          {error && <div style={{ color: "#dc2626", fontSize: 13, marginBottom: 12 }}>{error}</div>}
+          {error && <div className="text-red-600 text-xs sm:text-sm mb-3">{error}</div>}
 
-          <button type="submit" disabled={loading}
-            style={{ width: "100%", padding: "10px", background: loading ? "#93c5fd" : "#2563eb", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: loading ? "not-allowed" : "pointer" }}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full px-4 py-2 sm:py-2.5 text-sm sm:text-base font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed rounded-lg transition-colors"
+          >
             {loading ? "Registering..." : "Register"}
           </button>
         </form>

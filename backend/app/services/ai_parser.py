@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from datetime import datetime
 
 from google import genai
 from google.genai import types
@@ -70,8 +71,12 @@ async def parse_syllabus_image(file_path: str, file_type: str) -> SyllabusParseR
         try:
             course_info = CourseCreate(**ci)
         except Exception:
-            # If course_info cannot be parsed, ignore it and still get events
-            course_info = None
+            # If course_info cannot be parsed, create default one
+            course_info = CourseCreate(name="Untitled Course")
+
+    # If still no course_info, create default
+    if not course_info:
+        course_info = CourseCreate(name="Untitled Course")
 
     events = []
     for ev in data.get("events", []):
@@ -82,6 +87,31 @@ async def parse_syllabus_image(file_path: str, file_type: str) -> SyllabusParseR
         try:
             events.append(EventCreate(**ev))
         except Exception:
+            pass
+
+    # Auto-calculate course start_date and end_date from events if not provided
+    if events and not course_info.start_date and not course_info.end_date:
+        try:
+            event_dates = []
+            for ev in events:
+                if ev.start_time:
+                    try:
+                        dt = datetime.fromisoformat(str(ev.start_time).replace('Z', '+00:00'))
+                        event_dates.append(dt)
+                    except Exception:
+                        pass
+                if ev.end_time:
+                    try:
+                        dt = datetime.fromisoformat(str(ev.end_time).replace('Z', '+00:00'))
+                        event_dates.append(dt)
+                    except Exception:
+                        pass
+
+            if event_dates:
+                course_info.start_date = min(event_dates)
+                course_info.end_date = max(event_dates)
+        except Exception:
+            # If date calculation fails, continue without auto-calculating
             pass
 
     return SyllabusParseResult(

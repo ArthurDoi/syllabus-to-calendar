@@ -127,13 +127,23 @@ function EventGroup({ labelKey, events, onChangeByGlobal, onRemoveByGlobal, onAd
 export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscarded }: Props) {
   const parsed = upload.parsed_data;
 
+  // Extract date part from ISO datetime string (e.g., "2025-01-01T00:00:00" → "2025-01-01")
+  const formatDateForInput = (val: any): string => {
+    if (!val) return "";
+    const str = String(val);
+    if (str.includes("T")) {
+      return str.split("T")[0]; // Extract date part from ISO
+    }
+    return str;
+  };
+
   const [form, setForm] = useState<CourseCreate>({
     name: parsed?.course_info?.name || "Untitled Course",
     code: parsed?.course_info?.code || "",
     term: parsed?.course_info?.term || "",
     instructor: parsed?.course_info?.instructor || "",
-    start_date: parsed?.course_info?.start_date || "",
-    end_date: parsed?.course_info?.end_date || "",
+    start_date: formatDateForInput(parsed?.course_info?.start_date),
+    end_date: formatDateForInput(parsed?.course_info?.end_date),
     color: parsed?.course_info?.color || "#2563eb",
   });
 
@@ -238,52 +248,47 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
     const key = ev.label && grouped[ev.label] !== undefined ? ev.label : "lecture";
     grouped[key].push({ ev, globalIndex: i });
   });
-  events.forEach((ev, i) => {
-    if (!ev.label || !grouped[ev.label]) {
-      grouped["lecture"].push({ ev, globalIndex: i });
-    }
-  });
 
   return (
-    <div className="fixed inset-0 z-[300] bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="bg-white rounded-2xl w-full max-w-7xl h-[94vh] flex flex-col overflow-hidden shadow-2xl border border-gray-200/60 ring-1 ring-black/5">
+    <div className="fixed inset-0 z-[300] bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-3 md:p-6 lg:p-8">
+      <div className="bg-white rounded-xl sm:rounded-2xl w-full max-h-[95vh] sm:max-h-[94vh] max-w-2xl md:max-w-5xl lg:max-w-7xl flex flex-col overflow-hidden shadow-2xl border border-gray-200/60 ring-1 ring-black/5">
 
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
-              <LayoutTemplate className="w-5 h-5" />
+        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0 gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+              <LayoutTemplate className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Review Extracted Data</h2>
-              <p className="text-[13px] text-gray-500 mt-0.5">Compare and edit course and event data before saving.</p>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">Review Extracted Data</h2>
+              <p className="text-xs sm:text-[13px] text-gray-500 mt-0.5 hidden sm:block">Compare and edit course and event data before saving.</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg sm:rounded-xl transition-colors flex-shrink-0">
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
         {/* Workspace */}
-        <div className="flex flex-1 overflow-hidden bg-white">
+        <div className="flex flex-1 overflow-hidden bg-white flex-col md:flex-row">
 
           {/* Document Preview Panel */}
-          <div className="w-5/12 border-r border-gray-100 bg-gray-50/50 flex flex-col p-6 relative hidden md:flex">
-            <div className="flex items-center justify-between mb-4 px-1">
-              <span className="text-sm font-semibold text-gray-900 flex items-center gap-2"><FileText className="w-4 h-4 text-gray-500" /> Original Document</span>
+          <div className="w-full md:w-5/12 border-b md:border-b-0 md:border-r border-gray-100 bg-gray-50/50 flex flex-col p-3 sm:p-4 md:p-6 relative hidden md:flex">
+            <div className="flex items-center justify-between mb-3 sm:mb-4 px-1">
+              <span className="text-xs sm:text-sm font-semibold text-gray-900 flex items-center gap-2"><FileText className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" /> Original Document</span>
             </div>
-            <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex items-center justify-center relative group">
+            <div className="flex-1 bg-white rounded-lg sm:rounded-xl border border-gray-200 shadow-sm overflow-hidden flex items-center justify-center relative group">
               {imageUrl ? (
                 <>
                   <img src={imageUrl} alt={upload.original_name} className="max-w-full max-h-full object-contain p-2" />
-                  <button onClick={() => setIsZoomed(true)} className="absolute top-4 right-4 p-2.5 bg-white/95 backdrop-blur border border-gray-200 text-gray-700 rounded-xl shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-gray-50 hover:-translate-y-0.5">
-                    <ZoomIn className="w-4 h-4" />
+                  <button onClick={() => setIsZoomed(true)} className="absolute top-2 right-2 sm:top-4 sm:right-4 p-1.5 sm:p-2.5 bg-white/95 backdrop-blur border border-gray-200 text-gray-700 rounded-lg sm:rounded-xl shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-gray-50 hover:-translate-y-0.5">
+                    <ZoomIn className="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
                 </>
               ) : (
-                <div className="flex flex-col items-center justify-center text-gray-400 gap-3">
-                  {upload.file_type?.includes("pdf") ? <FileText className="w-10 h-10 opacity-30" /> : <Loader2 className="w-6 h-6 animate-spin" />}
-                  <span className="text-[13px] font-medium">{upload.file_type?.includes("pdf") ? "PDF preview not available" : "Loading file..."}</span>
+                <div className="flex flex-col items-center justify-center text-gray-400 gap-2 sm:gap-3">
+                  {upload.file_type?.includes("pdf") ? <FileText className="w-8 h-8 sm:w-10 sm:h-10 opacity-30" /> : <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" />}
+                  <span className="text-[12px] sm:text-[13px] font-medium text-center px-2">{upload.file_type?.includes("pdf") ? "PDF preview not available" : "Loading file..."}</span>
                 </div>
               )}
             </div>
@@ -291,15 +296,15 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
 
           {/* Editor Panel */}
           <div className="flex-1 flex flex-col w-full md:w-7/12 bg-white relative">
-            <div className="flex-1 overflow-y-auto p-6 lg:p-8 scroll-smooth">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 scroll-smooth">
 
               {/* Course Info Section */}
-              <div className="mb-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <Info className="w-4 h-4 text-blue-600" />
-                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Course Information</h3>
+              <div className="mb-6 sm:mb-10">
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <Info className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
+                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wider">Course Information</h3>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-3 sm:gap-y-5">
                   {[
                     ["Course Name", "name", "text", "Example: Introduction to AI"],
                     ["Instructor", "instructor", "text", "Example: Dr. John Smith"],
@@ -308,25 +313,25 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
                     ["Start Date", "start_date", "date", ""],
                     ["End Date", "end_date", "date", ""]
                   ].map(([lbl, key, type, placeholder]) => (
-                    <div key={key} className="space-y-1.5">
-                      <label className="text-[13px] font-medium text-gray-700 ml-0.5">{lbl}</label>
+                    <div key={key} className="space-y-1">
+                      <label className="text-xs sm:text-[13px] font-medium text-gray-700 ml-0.5">{lbl}</label>
                       <input
                         type={type}
                         placeholder={placeholder}
                         value={(form as any)[key] || ""}
                         onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))}
-                        className="w-full text-sm text-gray-900 bg-gray-50 hover:bg-gray-100/80 focus:bg-white border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl px-4 py-2.5 outline-none transition-all placeholder:text-gray-400"
+                        className="w-full text-xs sm:text-sm text-gray-900 bg-gray-50 hover:bg-gray-100/80 focus:bg-white border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-lg sm:rounded-xl px-2.5 sm:px-4 py-1.5 sm:py-2.5 outline-none transition-all placeholder:text-gray-400"
                       />
                     </div>
                   ))}
-                  <div className="space-y-2 sm:col-span-2 mt-1">
-                    <label className="text-[13px] font-medium text-gray-700 ml-0.5">Course Background Color</label>
-                    <div className="flex gap-3">
+                  <div className="space-y-1.5 sm:col-span-2 mt-1">
+                    <label className="text-xs sm:text-[13px] font-medium text-gray-700 ml-0.5">Course Background Color</label>
+                    <div className="flex gap-2 sm:gap-3 flex-wrap">
                       {["#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#475569", "#0891b2", "#ec4899"].map(c => (
                         <button
                           key={c}
                           onClick={() => setForm(prev => ({ ...prev, color: c }))}
-                          className={`w-8 h-8 rounded-full shadow-sm transition-all focus:outline-none ${form.color === c ? 'ring-[3px] ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-110 border border-black/10'}`}
+                          className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full shadow-sm transition-all focus:outline-none ${form.color === c ? 'ring-[3px] ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-110 border border-black/10'}`}
                           style={{ backgroundColor: c }}
                           type="button"
                         />
@@ -337,25 +342,25 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
               </div>
 
               {/* Decorative Divider */}
-              <div className="h-px w-full bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 mb-10" />
+              <div className="h-px w-full bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 mb-6 sm:mb-10" />
 
               {/* Events Section */}
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-blue-600" />
-                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Schedule List</h3>
+                    <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
+                    <h3 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wider">Schedule List</h3>
                   </div>
-                  <span className="text-[13px] font-medium text-blue-700 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">{events.length} extracted events</span>
+                  <span className="text-xs sm:text-[13px] font-medium text-blue-700 bg-blue-50 border border-blue-100 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full whitespace-nowrap">{events.length} events</span>
                 </div>
 
                 {events.length === 0 ? (
-                  <div className="text-center py-16 bg-gray-50 rounded-2xl border border-gray-200 border-dashed">
-                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-gray-100">
-                      <Calendar className="w-6 h-6 text-gray-400" />
+                  <div className="text-center py-8 sm:py-16 bg-gray-50 rounded-lg sm:rounded-2xl border border-gray-200 border-dashed">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4 shadow-sm border border-gray-100">
+                      <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
                     </div>
-                    <p className="text-[15px] font-medium text-gray-900 mb-1">No events</p>
-                    <p className="text-[13px] text-gray-500">This document contains no schedule.</p>
+                    <p className="text-sm sm:text-[15px] font-medium text-gray-900 mb-1">No events</p>
+                    <p className="text-xs sm:text-[13px] text-gray-500">This document contains no schedule.</p>
                   </div>
                 ) : (
                   <div>
@@ -370,18 +375,19 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
             </div>
 
             {/* Sticky Actions Footer */}
-            <div className="px-6 lg:px-8 py-5 border-t border-gray-100 bg-white flex items-center justify-between flex-shrink-0 relative z-10 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
-              <div className="text-[13px] text-gray-500 hidden sm:block">
-                {existingCourseId ? <span>Updating <strong>current course</strong></span> : <span>Will confirm creating new with <strong>{events.length}</strong> tasks</span>}
+            <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-5 border-t border-gray-100 bg-white flex items-center justify-between flex-wrap gap-2 sm:gap-3 flex-shrink-0 relative z-10 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
+              <div className="text-xs sm:text-[13px] text-gray-500 hidden sm:block">
+                {existingCourseId ? <span>Updating <strong>current course</strong></span> : <span>Will create with <strong>{events.length}</strong> tasks</span>}
               </div>
-              <div className="flex items-center gap-3 ml-auto">
-                {error && <div className="text-[13px] text-red-600 font-medium mr-2 max-w-[200px] sm:max-w-xs truncate" title={error}>⚠️ {error}</div>}
-                <button onClick={() => setConfirmDiscard(true)} className="px-4 py-2.5 text-[13px] font-semibold text-red-600 bg-white border border-red-200 hover:bg-red-50 hover:border-red-300 rounded-xl transition-all">
-                  Delete Document
+              <div className="flex items-center gap-2 sm:gap-3 ml-auto flex-wrap justify-end">
+                {error && <div className="text-xs sm:text-[13px] text-red-600 font-medium max-w-[150px] sm:max-w-xs truncate" title={error}>⚠️ Error</div>}
+                <button onClick={() => setConfirmDiscard(true)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-[13px] font-semibold text-red-600 bg-white border border-red-200 hover:bg-red-50 hover:border-red-300 rounded-lg sm:rounded-xl transition-all whitespace-nowrap">
+                  Delete
                 </button>
-                <button onClick={handleConfirm} disabled={loading} className={`px-6 py-2.5 text-[13px] font-bold text-white rounded-xl transition-all flex items-center gap-2 ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow hover:-translate-y-0.5'}`}>
-                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {loading ? "Processing..." : (existingCourseId ? "Save Update" : "Confirm & Create Course")}
+                <button onClick={handleConfirm} disabled={loading} className={`px-3 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-[13px] font-bold text-white rounded-lg sm:rounded-xl transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow hover:-translate-y-0.5'}`}>
+                  {loading && <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />}
+                  <span className="hidden sm:inline">{loading ? "Processing..." : (existingCourseId ? "Save Update" : "Create")}</span>
+                  <span className="sm:hidden">{loading ? "..." : "Save"}</span>
                 </button>
               </div>
             </div>
@@ -391,8 +397,8 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
 
       {/* Zoom Modal */}
       {isZoomed && imageUrl && (
-        <div onClick={() => setIsZoomed(false)} className="fixed inset-0 z-[9999] bg-gray-900/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-12 cursor-zoom-out">
-          <img src={imageUrl} alt="Original" className="max-w-full max-h-full object-contain rounded-xl shadow-2xl ring-1 ring-white/10" />
+        <div onClick={() => setIsZoomed(false)} className="fixed inset-0 z-[9999] bg-gray-900/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 md:p-12 cursor-zoom-out">
+          <img src={imageUrl} alt="Original" className="max-w-full max-h-full object-contain rounded-lg sm:rounded-xl shadow-2xl ring-1 ring-white/10" />
         </div>
       )}
 
