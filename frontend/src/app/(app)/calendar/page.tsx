@@ -47,6 +47,7 @@ export default function CalendarPage() {
     const [currentView, setCurrentView] = useState<CalendarView>('dayGridMonth');
     const [calendarTitle, setCalendarTitle] = useState('');
     const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
     const [courses, setCourses] = useState<Course[]>([]);
     const [coursesLoading, setCoursesLoading] = useState(true);
     const [calendarError, setCalendarError] = useState<string | null>(null);
@@ -132,6 +133,14 @@ export default function CalendarPage() {
             };
         });
     }, [events, courses]);
+
+    // Events for the selected date (mobile list view)
+    const dayEvents = useMemo(() => {
+        return events.filter(ev => {
+            if (!ev.start_time) return false;
+            return ev.start_time.split('T')[0] === selectedDate;
+        });
+    }, [events, selectedDate]);
 
     const handleSync = async () => {
         setSyncError(null); setSyncSuccess(null);
@@ -227,10 +236,11 @@ export default function CalendarPage() {
 
     const handleEventClick = useCallback((clickInfo: any) => {
         setSelectedEvent(clickInfo.event);
-        // On mobile: open dialog immediately instead of side panel
-        if (window.innerWidth < 768) {
-            setDetailDrawerOpen(true);
-        }
+        setDetailDrawerOpen(true); // always open dialog (mobile = only way, desktop = expand)
+    }, []);
+
+    const handleDateClick = useCallback((info: any) => {
+        setSelectedDate(info.dateStr); // yyyy-mm-dd
     }, []);
 
     const handleEventDidMount = useCallback((info: any) => {
@@ -295,31 +305,24 @@ export default function CalendarPage() {
                 </Alert>
             )}
 
-            <div className="flex items-center justify-between gap-2 pb-2 sm:pb-3 border-b border-gray-200 flex-wrap">
+            <div className="flex items-center justify-between gap-2 pb-2 border-b border-gray-200">
                 {/* Course filter */}
-                <Select
-                    value={courseId ?? 'all'}
-                    onValueChange={handleCourseChange}
-                >
-                    <SelectTrigger className="w-44 sm:w-56 text-sm">
+                <Select value={courseId ?? 'all'} onValueChange={handleCourseChange}>
+                    <SelectTrigger className="w-36 sm:w-56 text-xs sm:text-sm">
                         <SelectValue placeholder="Filter course" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All courses</SelectItem>
                         {courses.map((course) => (
-                            <SelectItem key={course.id} value={course.id}>
-                                {course.name}
-                            </SelectItem>
+                            <SelectItem key={course.id} value={course.id}>{course.name}</SelectItem>
                         ))}
                         {!coursesLoading && courses.length === 0 && (
-                            <SelectItem value="__empty" disabled>
-                                No courses
-                            </SelectItem>
+                            <SelectItem value="__empty" disabled>No courses</SelectItem>
                         )}
                     </SelectContent>
                 </Select>
 
-                {/* Sync button */}
+                {/* Sync button — icon only on mobile */}
                 <div className="flex flex-col items-end gap-0.5">
                     <Button
                         size="sm"
@@ -327,72 +330,60 @@ export default function CalendarPage() {
                         onClick={handleSync}
                         disabled={syncing}
                         className={cn(
-                            "gap-1.5 text-xs sm:text-sm whitespace-nowrap",
+                            "gap-1.5 text-xs whitespace-nowrap px-2 sm:px-3",
                             syncStatus?.connected && !syncing && "bg-blue-600 hover:bg-blue-700 text-white",
                             !syncStatus?.connected && !syncing && "border-gray-300 text-gray-700 hover:bg-gray-50"
                         )}
                     >
                         {syncing
-                            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Syncing...</>
+                            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /><span className="hidden sm:inline">Syncing...</span></>
                             : syncStatus?.connected
-                                ? <><CheckCircle2 className="w-3.5 h-3.5" />Sync Google Calendar</>
-                                : <><CalendarIcon className="w-3.5 h-3.5" />Connect Google Calendar</>
+                                ? <><CheckCircle2 className="w-3.5 h-3.5" /><span className="hidden sm:inline">Sync</span></>
+                                : <><CalendarIcon className="w-3.5 h-3.5" /><span className="hidden xs:inline sm:inline">Connect</span></>
                         }
                     </Button>
                     {syncStatus?.connected && syncStatus.last_synced_at && (
-                        <span className="text-[10px] text-gray-400">
+                        <span className="text-[9px] text-gray-400 hidden sm:block">
                             {new Date(syncStatus.last_synced_at).toLocaleString("vi-VN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </span>
                     )}
                 </div>
             </div>
 
-
-            <div className="flex flex-col gap-2 sm:gap-3 pb-2 sm:pb-3">
-                <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-3">
-                    <div className="flex items-center gap-1 sm:gap-2 min-w-0">
-                        <Button variant="ghost" size="sm" onClick={() => handleNavigate('prev')} className="h-7 sm:h-8 w-7 sm:w-8 p-0 text-gray-600 text-xs sm:text-sm">
-                            ‹
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={handleToday} className="h-7 sm:h-8 px-2 sm:px-4 text-gray-900 font-medium border border-gray-200 rounded-full text-xs sm:text-sm">
-                            Today
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleNavigate('next')} className="h-7 sm:h-8 w-7 sm:w-8 p-0 text-gray-600 text-xs sm:text-sm">
-                            ›
-                        </Button>
-                        <span className="text-base sm:text-lg md:text-xl font-semibold text-gray-900 ml-1 sm:ml-2 truncate">{calendarTitle || 'Calendar'}</span>
-                    </div>
-
-
-                    <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-wrap justify-end">
-                        <div className="flex items-center bg-gray-100 rounded-full p-0.5 sm:p-1 text-xs sm:text-sm">
-                            {viewOptions.map((option) => (
-                                <button
-                                    key={option.value}
-                                    onClick={() => changeView(option.value)}
-                                    className={cn(
-                                        "px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-semibold transition-all",
-                                        currentView === option.value
-                                            ? "bg-white shadow text-gray-900"
-                                            : "text-gray-500 hover:text-gray-900"
-                                    )}
-                                >
-                                    {option.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+            {/* Nav + view switcher */}
+            <div className="flex items-center justify-between gap-1 pb-2">
+                <div className="flex items-center gap-0.5 sm:gap-1 min-w-0">
+                    <Button variant="ghost" size="sm" onClick={() => handleNavigate('prev')} className="h-7 w-7 p-0 text-gray-600">‹</Button>
+                    <Button variant="ghost" size="sm" onClick={handleToday} className="h-7 px-2 text-gray-900 font-medium border border-gray-200 rounded-full text-xs">Today</Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleNavigate('next')} className="h-7 w-7 p-0 text-gray-600">›</Button>
+                    <span className="text-sm sm:text-lg font-semibold text-gray-900 ml-1 truncate max-w-[100px] sm:max-w-none">{calendarTitle || 'Calendar'}</span>
                 </div>
-
-                {calendarError && (
-                    <div className="w-full rounded-lg border border-red-200 bg-red-50 px-2 sm:px-3 py-2 text-xs sm:text-sm text-red-700">
-                        {calendarError}
-                    </div>
-                )}
+                <div className="flex items-center bg-gray-100 rounded-full p-0.5">
+                    {viewOptions.map((option) => (
+                        <button
+                            key={option.value}
+                            onClick={() => changeView(option.value)}
+                            className={cn(
+                                "px-2 py-1 rounded-full text-xs font-semibold transition-all",
+                                currentView === option.value ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-900"
+                            )}
+                        >
+                            {/* Single char on mobile, full label on sm+ */}
+                            <span className="sm:hidden">{option.label[0]}</span>
+                            <span className="hidden sm:inline">{option.label}</span>
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            <div className="flex flex-1 gap-2 sm:gap-3 md:gap-6 flex-col md:flex-row" style={{ minHeight: '520px' }}>
-                <Card className="p-2 sm:p-3 md:p-4 bg-white border border-gray-200 flex-1 min-w-0 shadow-sm relative overflow-hidden w-full min-h-[480px] sm:min-h-[560px]">
+            {calendarError && (
+                <div className="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 mb-1">
+                    {calendarError}
+                </div>
+            )}
+
+            <div className="flex flex-1 gap-3 flex-col md:flex-row">
+                <Card className="p-1 sm:p-3 md:p-4 bg-white border border-gray-200 flex-1 min-w-0 shadow-sm relative overflow-hidden w-full min-h-[320px] md:min-h-[500px]">
                     {loading && (
                         <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10">
                             <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
@@ -417,7 +408,7 @@ export default function CalendarPage() {
                         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                         headerToolbar={false}
                         initialView={currentView}
-                        height="100%"
+                        height="auto"
                         editable={false}
                         selectable
                         selectMirror
@@ -437,6 +428,7 @@ export default function CalendarPage() {
                             syncTitle();
                         }}
                         eventClick={handleEventClick}
+                        dateClick={handleDateClick}
                         select={handleDateSelect}
                         eventDidMount={handleEventDidMount}
                         datesSet={syncTitle}
@@ -463,7 +455,57 @@ export default function CalendarPage() {
                         }}
                     />
                 </Card>
-                {/* Detail panel — hidden on mobile, shown as sidebar on md+ */}
+
+                {/* Mobile: event list for selected day (Apple Calendar pattern) */}
+                <div className="md:hidden">
+                    <div className="flex items-center justify-between mb-2 px-1">
+                        <span className="text-sm font-semibold text-gray-800">
+                            {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                        </span>
+                        <span className="text-xs text-gray-400">{dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    {dayEvents.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400">
+                            <CalendarIcon className="w-8 h-8 mx-auto mb-2 text-gray-200" />
+                            <p className="text-xs">No events this day</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {dayEvents.map(ev => {
+                                const course = courses.find(c => c.id === ev.course_id);
+                                const color = LABEL_COLOR[ev.label || 'lecture'] || '#3b82f6';
+                                return (
+                                    <button
+                                        key={ev.id}
+                                        className="w-full text-left flex items-start gap-3 p-3 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+                                        onClick={() => {
+                                            // Find the FullCalendar EventApi to pass to dialog
+                                            const api = calendarRef.current?.getApi();
+                                            const fcEvent = api?.getEventById(ev.id);
+                                            if (fcEvent) {
+                                                setSelectedEvent(fcEvent);
+                                                setDetailDrawerOpen(true);
+                                            }
+                                        }}
+                                    >
+                                        <span className="mt-1 w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-sm font-semibold text-gray-900 truncate">{ev.title}</div>
+                                            <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                                                {ev.start_time?.includes('T') && (
+                                                    <span>{ev.start_time.split('T')[1]?.slice(0, 5)}</span>
+                                                )}
+                                                {course && <span className="truncate">{course.name}</span>}
+                                            </div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop: side panel */}
                 <div className="hidden md:block w-[260px] lg:w-[280px] flex-shrink-0">
                     <EventDetailPanel
                         event={selectedEvent}
