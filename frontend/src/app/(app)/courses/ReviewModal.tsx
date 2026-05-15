@@ -275,7 +275,7 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
 
   return (
     <div className="fixed inset-0 z-[300] bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-3 md:p-6 lg:p-8">
-      <div className="bg-white rounded-xl sm:rounded-2xl w-full max-h-[95vh] sm:max-h-[94vh] max-w-2xl md:max-w-5xl lg:max-w-7xl flex flex-col overflow-hidden shadow-2xl border border-gray-200/60 ring-1 ring-black/5">
+      <div className="bg-white rounded-xl sm:rounded-2xl w-full max-h-[98vh] sm:max-h-[95vh] max-w-2xl md:max-w-5xl lg:max-w-7xl flex flex-col overflow-hidden shadow-2xl border border-gray-200/60 ring-1 ring-black/5">
 
         {/* Header */}
         <div className="px-4 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0 gap-2">
@@ -430,34 +430,40 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
             </div>
 
             {/* Sticky Actions Footer */}
-            <div className="px-4 sm:px-6 lg:px-8 py-4 border-t border-gray-100 bg-white flex items-center justify-between flex-wrap gap-3 flex-shrink-0 relative z-10 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
-              <div className="text-sm text-gray-500 hidden sm:block">
-                {existingCourseId
-                  ? <span>Update <strong>existing course</strong></span>
-                  : <span>Creating with <Badge variant="secondary">{events.length}</Badge> events</span>}
-              </div>
-              <div className="flex items-center gap-2 sm:gap-3 ml-auto flex-wrap justify-end">
-                {error && (
-                  <Alert variant="destructive" className="py-1.5 max-w-xs">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="truncate text-xs">{error}</AlertDescription>
-                  </Alert>
-                )}
-                <Button
-                  variant="outline"
-                  onClick={() => setConfirmDiscard(true)}
-                  className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-                >
-                  Discard
-                </Button>
-                <Button
-                  onClick={handleConfirm}
-                  disabled={loading}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm"
-                >
-                  {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  {loading ? "Processing..." : (existingCourseId ? "Update course" : "Create course")}
-                </Button>
+            <div className="px-3 sm:px-6 lg:px-8 py-3 sm:py-4 border-t border-gray-100 bg-white flex-shrink-0 relative z-10 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
+              {/* Error — shown above buttons so they're never pushed off screen */}
+              {error && (
+                <Alert variant="destructive" className="py-1.5 mb-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">{error}</AlertDescription>
+                </Alert>
+              )}
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs text-gray-500 hidden sm:block flex-1 min-w-0">
+                  {existingCourseId
+                    ? <span>Update <strong>existing course</strong></span>
+                    : <span>Creating with <Badge variant="secondary">{events.length}</Badge> events</span>}
+                </div>
+                {/* Buttons always visible — full width on mobile */}
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setConfirmDiscard(true)}
+                    className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 flex-1 sm:flex-none"
+                  >
+                    Discard
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleConfirm}
+                    disabled={loading}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm flex-1 sm:flex-none"
+                  >
+                    {loading && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+                    {loading ? "Processing..." : (existingCourseId ? "Update course" : "Create course")}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
