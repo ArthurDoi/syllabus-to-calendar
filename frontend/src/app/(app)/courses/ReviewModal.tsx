@@ -274,21 +274,19 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
   };
 
   return (
-    <div className="fixed inset-0 z-[300] bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-3 md:p-6 lg:p-8">
-      <div className="bg-white rounded-xl sm:rounded-2xl w-full max-h-[98vh] sm:max-h-[95vh] max-w-2xl md:max-w-5xl lg:max-w-7xl flex flex-col overflow-hidden shadow-2xl border border-gray-200/60 ring-1 ring-black/5">
+    <div className="fixed inset-0 z-[300] bg-gray-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-3 md:p-6 lg:p-8">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-h-[92dvh] sm:max-h-[95vh] max-w-2xl md:max-w-5xl lg:max-w-7xl flex flex-col overflow-hidden shadow-2xl border border-gray-200/60">
 
         {/* Header */}
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0 gap-2">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full flex-shrink-0" />
-            <div className="min-w-0">
-              <h2 className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent truncate">
-                Review Extracted Data
-              </h2>
-            </div>
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0 gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <div className="w-1 h-6 sm:h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full flex-shrink-0" />
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+              Review Extracted Data
+            </h2>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
@@ -317,9 +315,9 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
             </div>
           </div>
 
-          {/* Editor Panel */}
-          <div className="flex-1 flex flex-col w-full md:w-7/12 bg-white relative">
-            <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8 scroll-smooth">
+          {/* Editor Panel — full width on mobile, flex-1 on desktop */}
+          <div className="flex-1 flex flex-col w-full md:w-7/12 bg-white relative min-h-0">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 lg:p-8 scroll-smooth">
 
               {/* Course Info Section */}
               <div className="mb-6 sm:mb-10">
@@ -327,7 +325,7 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
                   <Info className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
                   <h3 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wider">Course Information</h3>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-3 sm:gap-y-5">
+                <div className="grid grid-cols-2 sm:grid-cols-2 gap-x-3 sm:gap-x-6 gap-y-3 sm:gap-y-5">
                   {[
                     ["Course Name", "name", "text", "Example: Introduction to AI"],
                     ["Instructor", "instructor", "text", "Example: Dr. John Smith"],
