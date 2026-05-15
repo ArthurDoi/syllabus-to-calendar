@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Tag, BookOpen, Inbox, Clock, MapPin, ExternalLink } from 'lucide-react';
 import { EventApi } from '@fullcalendar/core/index.js';
 import { cn } from '@/lib/utils';
+import { getLabelConfig } from '@/constants/event-labels';
 
 interface EventDetailPanelProps {
     event: EventApi | null;
@@ -46,29 +47,6 @@ export function formatEventDate(event: EventApi): string {
         hour: '2-digit',
         minute: '2-digit',
     });
-}
-
-
-function getEventTypeLabel(type: string): string {
-    const labels: Record<string, string> = {
-        'course': 'Course',
-        'assignment': 'Assignment',
-        'exam': 'Exam',
-        'class': 'Class',
-        'milestone': 'Milestone'
-    };
-    return labels[type] || type;
-}
-
-function getEventTypeVariant(type: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-        'course': 'default',
-        'assignment': 'secondary',
-        'exam': 'destructive',
-        'class': 'outline',
-        'milestone': 'default'
-    };
-    return variants[type] || 'secondary';
 }
 
 
@@ -174,9 +152,21 @@ export function EventDetailPanel({ event, className, variant = 'compact', onExpa
 
                     <div className="flex items-center gap-3">
                         <Tag className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                        <Badge variant={getEventTypeVariant(type)}>
-                            {getEventTypeLabel(type)}
-                        </Badge>
+                        {(() => {
+                            const cfg = getLabelConfig(type);
+                            return (
+                                <Badge
+                                    style={{
+                                        backgroundColor: cfg.bg,
+                                        color: cfg.color,
+                                        borderColor: cfg.color + '33'
+                                    }}
+                                    className="border font-medium"
+                                >
+                                    {cfg.label}
+                                </Badge>
+                            );
+                        })()}
                     </div>
                     {location && (
                         <div className="flex items-start gap-3">

@@ -1,11 +1,14 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { courseService, eventService, syllabusService } from "@/lib/services";
 import type { SyllabusUpload, Course, CourseCreate, EventCreate, EventLabel } from "@/types";
-import { LABEL_CONFIG } from "@/constants/event-labels";
+import { LABEL_CONFIG, getLabelConfig, LABEL_ORDER as BUILT_IN_ORDER } from "@/constants/event-labels";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { Loader2, Plus, X, Calendar, FileText, LayoutTemplate, ZoomIn, Info } from "lucide-react";
+import { Loader2, Plus, X, Calendar, FileText, ZoomIn, Info, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -29,12 +32,11 @@ interface Props {
 }
 
 function EventCard({ ev, index, onChange, onRemove }: { ev: EventCreate; index: number; onChange: (i: number, patch: Partial<EventCreate>) => void; onRemove: (i: number) => void; }) {
-  const cfg = LABEL_CONFIG[ev.label || "lecture"] || LABEL_CONFIG.lecture;
+  const cfg = getLabelConfig(ev.label);
 
   return (
     <div className="group relative flex flex-col gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all focus-within:border-blue-300 focus-within:ring-1 focus-within:ring-blue-100">
-      <div className="absolute top-0 left-0 w-1.5 h-full rounded-l-xl opacity-90" style={{ backgroundColor: cfg.color }} />
-      <div className="flex items-start justify-between gap-4 w-full pl-3">
+      <div className="flex items-start justify-between gap-4 w-full">
         <div className="flex-1 min-w-0">
           <input
             value={ev.title}
@@ -81,7 +83,7 @@ function EventCard({ ev, index, onChange, onRemove }: { ev: EventCreate; index: 
           <X className="w-4 h-4" />
         </button>
       </div>
-      <div className="pl-3">
+      <div>
         <textarea
           value={ev.description || ""}
           onChange={e => onChange(index, { description: e.target.value || undefined })}
@@ -100,7 +102,7 @@ function EventCard({ ev, index, onChange, onRemove }: { ev: EventCreate; index: 
 }
 
 function EventGroup({ labelKey, events, onChangeByGlobal, onRemoveByGlobal, onAdd }: { labelKey: string; events: { ev: EventCreate; globalIndex: number }[]; onChangeByGlobal: any; onRemoveByGlobal: any; onAdd: any; }) {
-  const cfg = LABEL_CONFIG[labelKey as keyof typeof LABEL_CONFIG] || LABEL_CONFIG.lecture;
+  const cfg = getLabelConfig(labelKey);
   if (events.length === 0) return null;
 
   return (
@@ -242,30 +244,51 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
     }
   };
 
-  const LABEL_ORDER = ["assignment", "exam", "lecture", "holiday"];
-  const grouped = LABEL_ORDER.reduce<Record<string, { ev: EventCreate; globalIndex: number }[]>>((acc, lbl) => { acc[lbl] = []; return acc; }, {});
-  events.forEach((ev, i) => {
-    const key = ev.label && grouped[ev.label] !== undefined ? ev.label : "lecture";
-    grouped[key].push({ ev, globalIndex: i });
-  });
+  // ── Dynamic grouping: preserves built-in order, appends unknown labels alphabetically
+  const [newLabelInput, setNewLabelInput] = useState("");
+  const [showNewLabel, setShowNewLabel] = useState(false);
+  const newLabelRef = useRef<HTMLInputElement>(null);
+
+  const grouped = (() => {
+    const map: Record<string, { ev: EventCreate; globalIndex: number }[]> = {};
+    events.forEach((ev, i) => {
+      const key = (ev.label || "lecture").toLowerCase();
+      if (!map[key]) map[key] = [];
+      map[key].push({ ev, globalIndex: i });
+    });
+    return map;
+  })();
+
+  // Built-in labels first, then any extra labels from events, alphabetically
+  const groupKeys = [
+    ...BUILT_IN_ORDER.filter(l => grouped[l]?.length > 0),
+    ...Object.keys(grouped).filter(k => !BUILT_IN_ORDER.includes(k as any)).sort(),
+  ];
+
+  const handleAddNewLabel = () => {
+    const label = newLabelInput.trim().toLowerCase().replace(/\s+/g, "_");
+    if (!label) return;
+    handleAddEvent(label);
+    setNewLabelInput("");
+    setShowNewLabel(false);
+  };
 
   return (
     <div className="fixed inset-0 z-[300] bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-3 md:p-6 lg:p-8">
       <div className="bg-white rounded-xl sm:rounded-2xl w-full max-h-[95vh] sm:max-h-[94vh] max-w-2xl md:max-w-5xl lg:max-w-7xl flex flex-col overflow-hidden shadow-2xl border border-gray-200/60 ring-1 ring-black/5">
 
         {/* Header */}
-        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0 gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
-              <LayoutTemplate className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">Review Extracted Data</h2>
-              <p className="text-xs sm:text-[13px] text-gray-500 mt-0.5 hidden sm:block">Compare and edit course and event data before saving.</p>
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0 gap-2">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full flex-shrink-0" />
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent truncate">
+                Review Extracted Data
+              </h2>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg sm:rounded-xl transition-colors flex-shrink-0">
-            <X className="w-4 h-4 sm:w-5 sm:h-5" />
+          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -351,7 +374,7 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
                     <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
                     <h3 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wider">Schedule List</h3>
                   </div>
-                  <span className="text-xs sm:text-[13px] font-medium text-blue-700 bg-blue-50 border border-blue-100 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full whitespace-nowrap">{events.length} events</span>
+                  <Badge className="bg-blue-50 text-blue-700 border-blue-100">{events.length} events</Badge>
                 </div>
 
                 {events.length === 0 ? (
@@ -363,32 +386,78 @@ export default function ReviewModal({ upload, onClose, onCourseCreated, onDiscar
                     <p className="text-xs sm:text-[13px] text-gray-500">This document contains no schedule.</p>
                   </div>
                 ) : (
-                  <div>
-                    {LABEL_ORDER.map(lbl => (
-                      grouped[lbl]?.length > 0 ? (
-                        <EventGroup key={lbl} labelKey={lbl} events={grouped[lbl]} onChangeByGlobal={handleEventChange} onRemoveByGlobal={handleRemoveEvent} onAdd={() => handleAddEvent(lbl)} />
-                      ) : null
+                  <div className="space-y-2">
+                    {groupKeys.map(lbl => (
+                      <EventGroup
+                        key={lbl}
+                        labelKey={lbl}
+                        events={grouped[lbl]}
+                        onChangeByGlobal={handleEventChange}
+                        onRemoveByGlobal={handleRemoveEvent}
+                        onAdd={() => handleAddEvent(lbl)}
+                      />
                     ))}
+
+                    {/* Add new label type */}
+                    <div className="mt-4 pt-4 border-t border-dashed border-gray-200">
+                      {showNewLabel ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            ref={newLabelRef}
+                            autoFocus
+                            value={newLabelInput}
+                            onChange={e => setNewLabelInput(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") handleAddNewLabel(); if (e.key === "Escape") setShowNewLabel(false); }}
+                            placeholder="e.g. sport, travel, meeting..."
+                            className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+                          />
+                          <Button size="sm" onClick={handleAddNewLabel} className="bg-blue-600 hover:bg-blue-700 text-white">Add</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setShowNewLabel(false)}>Cancel</Button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setShowNewLabel(true)}
+                          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors w-full"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add new event type
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Sticky Actions Footer */}
-            <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-5 border-t border-gray-100 bg-white flex items-center justify-between flex-wrap gap-2 sm:gap-3 flex-shrink-0 relative z-10 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
-              <div className="text-xs sm:text-[13px] text-gray-500 hidden sm:block">
-                {existingCourseId ? <span>Updating <strong>current course</strong></span> : <span>Will create with <strong>{events.length}</strong> tasks</span>}
+            <div className="px-4 sm:px-6 lg:px-8 py-4 border-t border-gray-100 bg-white flex items-center justify-between flex-wrap gap-3 flex-shrink-0 relative z-10 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
+              <div className="text-sm text-gray-500 hidden sm:block">
+                {existingCourseId
+                  ? <span>Update <strong>existing course</strong></span>
+                  : <span>Creating with <Badge variant="secondary">{events.length}</Badge> events</span>}
               </div>
               <div className="flex items-center gap-2 sm:gap-3 ml-auto flex-wrap justify-end">
-                {error && <div className="text-xs sm:text-[13px] text-red-600 font-medium max-w-[150px] sm:max-w-xs truncate" title={error}>⚠️ Error</div>}
-                <button onClick={() => setConfirmDiscard(true)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-[13px] font-semibold text-red-600 bg-white border border-red-200 hover:bg-red-50 hover:border-red-300 rounded-lg sm:rounded-xl transition-all whitespace-nowrap">
-                  Delete
-                </button>
-                <button onClick={handleConfirm} disabled={loading} className={`px-3 sm:px-6 py-1.5 sm:py-2.5 text-xs sm:text-[13px] font-bold text-white rounded-lg sm:rounded-xl transition-all flex items-center gap-1 sm:gap-2 whitespace-nowrap ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow hover:-translate-y-0.5'}`}>
-                  {loading && <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />}
-                  <span className="hidden sm:inline">{loading ? "Processing..." : (existingCourseId ? "Save Update" : "Create")}</span>
-                  <span className="sm:hidden">{loading ? "..." : "Save"}</span>
-                </button>
+                {error && (
+                  <Alert variant="destructive" className="py-1.5 max-w-xs">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="truncate text-xs">{error}</AlertDescription>
+                  </Alert>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => setConfirmDiscard(true)}
+                  className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                >
+                  Discard
+                </Button>
+                <Button
+                  onClick={handleConfirm}
+                  disabled={loading}
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm"
+                >
+                  {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {loading ? "Processing..." : (existingCourseId ? "Update course" : "Create course")}
+                </Button>
               </div>
             </div>
           </div>

@@ -68,10 +68,9 @@ export function CourseCard({ course, onEdit, onDeleted }: CourseCardProps) {
   return (
     <div onClick={handleEditClick} className="block w-full text-left focus:outline-none">
       <Card
-        className="p-4 bg-white border-l-4 cursor-pointer group relative overflow-hidden transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1 active:scale-[0.98] active:shadow-md"
+        className="p-4 bg-white border border-gray-200 cursor-pointer group relative overflow-hidden transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-lg hover:-translate-y-1 active:scale-[0.98] active:shadow-md"
         style={{
-          borderLeftColor: course.color,
-          backgroundColor: hexToRgba(course.color, 0.02)
+          backgroundColor: hexToRgba(course.color, 0.06)
         }}
       >
         {/* Subtle gradient overlay */}

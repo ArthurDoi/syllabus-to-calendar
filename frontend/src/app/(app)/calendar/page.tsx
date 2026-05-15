@@ -10,8 +10,9 @@ import timeGridPlugin from '@fullcalendar/timegrid/index.js';
 import interactionPlugin from '@fullcalendar/interaction/index.js';
 
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
     Dialog,
     DialogContent,
@@ -226,6 +227,10 @@ export default function CalendarPage() {
 
     const handleEventClick = useCallback((clickInfo: any) => {
         setSelectedEvent(clickInfo.event);
+        // On mobile: open dialog immediately instead of side panel
+        if (window.innerWidth < 768) {
+            setDetailDrawerOpen(true);
+        }
     }, []);
 
     const handleEventDidMount = useCallback((info: any) => {
@@ -262,33 +267,45 @@ export default function CalendarPage() {
     };
 
     return (
-        <div className="p-3 sm:p-4 md:p-6 h-full flex flex-col gap-2 sm:gap-3 bg-white w-full">
-            {/* Sync notifications */}
-            {syncError && (
-                <div style={{ padding: "8px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, fontSize: "12px", color: "#dc2626", display: "flex", justifyContent: "space-between", gap: "8px" }}>
-                    <span className="truncate">{syncError}</span>
-                    <button onClick={() => setSyncError(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626", flexShrink: 0 }}>✕</button>
+        <div className="p-3 sm:p-4 md:p-6 min-h-screen flex flex-col gap-3 bg-white w-full">
+            <div className="mb-2">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full flex-shrink-0" />
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                        Calendar
+                    </h1>
                 </div>
+            </div>
+            {syncError && (
+                <Alert variant="destructive" className="py-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="flex items-center justify-between gap-2">
+                        <span className="truncate">{syncError}</span>
+                        <button onClick={() => setSyncError(null)} className="flex-shrink-0 hover:opacity-70">✕</button>
+                    </AlertDescription>
+                </Alert>
             )}
             {syncSuccess && (
-                <div style={{ padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, fontSize: "12px", color: "#16a34a", display: "flex", justifyContent: "space-between", gap: "8px" }}>
-                    <span className="truncate">{syncSuccess}</span>
-                    <button onClick={() => setSyncSuccess(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#16a34a", flexShrink: 0 }}>✕</button>
-                </div>
+                <Alert className="py-2 border-green-200 bg-green-50 text-green-700 [&>svg]:text-green-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <AlertDescription className="flex items-center justify-between gap-2 text-green-700">
+                        <span className="truncate">{syncSuccess}</span>
+                        <button onClick={() => setSyncSuccess(null)} className="flex-shrink-0 hover:opacity-70">✕</button>
+                    </AlertDescription>
+                </Alert>
             )}
 
-            <div className="flex flex-col gap-2 sm:gap-3 pb-2 sm:pb-3 border-b border-gray-200">
+            <div className="flex items-center justify-between gap-2 pb-2 sm:pb-3 border-b border-gray-200 flex-wrap">
+                {/* Course filter */}
                 <Select
                     value={courseId ?? 'all'}
                     onValueChange={handleCourseChange}
                 >
-                    <SelectTrigger className="w-full sm:w-56 md:w-64 text-sm">
-                        <SelectValue placeholder="Filter by course" />
+                    <SelectTrigger className="w-44 sm:w-56 text-sm">
+                        <SelectValue placeholder="Filter course" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">
-                            All courses
-                        </SelectItem>
+                        <SelectItem value="all">All courses</SelectItem>
                         {courses.map((course) => (
                             <SelectItem key={course.id} value={course.id}>
                                 {course.name}
@@ -296,12 +313,40 @@ export default function CalendarPage() {
                         ))}
                         {!coursesLoading && courses.length === 0 && (
                             <SelectItem value="__empty" disabled>
-                                No courses found
+                                No courses
                             </SelectItem>
                         )}
                     </SelectContent>
                 </Select>
+
+                {/* Sync button */}
+                <div className="flex flex-col items-end gap-0.5">
+                    <Button
+                        size="sm"
+                        variant={syncStatus?.connected ? 'default' : 'outline'}
+                        onClick={handleSync}
+                        disabled={syncing}
+                        className={cn(
+                            "gap-1.5 text-xs sm:text-sm whitespace-nowrap",
+                            syncStatus?.connected && !syncing && "bg-blue-600 hover:bg-blue-700 text-white",
+                            !syncStatus?.connected && !syncing && "border-gray-300 text-gray-700 hover:bg-gray-50"
+                        )}
+                    >
+                        {syncing
+                            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Syncing...</>
+                            : syncStatus?.connected
+                                ? <><CheckCircle2 className="w-3.5 h-3.5" />Sync Google Calendar</>
+                                : <><CalendarIcon className="w-3.5 h-3.5" />Connect Google Calendar</>
+                        }
+                    </Button>
+                    {syncStatus?.connected && syncStatus.last_synced_at && (
+                        <span className="text-[10px] text-gray-400">
+                            {new Date(syncStatus.last_synced_at).toLocaleString("vi-VN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                    )}
+                </div>
             </div>
+
 
             <div className="flex flex-col gap-2 sm:gap-3 pb-2 sm:pb-3">
                 <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-3">
@@ -336,23 +381,6 @@ export default function CalendarPage() {
                                 </button>
                             ))}
                         </div>
-
-                        {/* Google Calendar Connect/Sync button */}
-                        <div className="flex flex-col items-end gap-0.5 sm:gap-1">
-                            <button onClick={handleSync} disabled={syncing}
-                                className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shadow-sm whitespace-nowrap", {
-                                    "bg-blue-600 text-white hover:bg-blue-700": syncStatus?.connected && !syncing,
-                                    "bg-gray-800 text-white hover:bg-gray-900": !syncStatus?.connected && !syncing,
-                                    "bg-gray-300 text-gray-600 cursor-not-allowed": syncing
-                                })}>
-                                {syncing ? "⟳ Syncing..." : syncStatus?.connected ? "🔄 Sync" : "🔗 Connect"}
-                            </button>
-                            {syncStatus?.connected && syncStatus.last_synced_at && (
-                                <span className="text-[9px] sm:text-[10px] text-gray-400 text-right">
-                                    Last sync: {new Date(syncStatus.last_synced_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                                </span>
-                            )}
-                        </div>
                     </div>
                 </div>
 
@@ -363,8 +391,8 @@ export default function CalendarPage() {
                 )}
             </div>
 
-            <div className="flex flex-1 gap-2 sm:gap-3 md:gap-6 min-h-0 flex-col md:flex-row">
-                <Card className="p-2 sm:p-3 md:p-4 bg-white border border-gray-200 flex-1 min-w-0 shadow-sm relative overflow-hidden w-full">
+            <div className="flex flex-1 gap-2 sm:gap-3 md:gap-6 flex-col md:flex-row" style={{ minHeight: '520px' }}>
+                <Card className="p-2 sm:p-3 md:p-4 bg-white border border-gray-200 flex-1 min-w-0 shadow-sm relative overflow-hidden w-full min-h-[480px] sm:min-h-[560px]">
                     {loading && (
                         <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10">
                             <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
@@ -435,7 +463,8 @@ export default function CalendarPage() {
                         }}
                     />
                 </Card>
-                <div className="w-[260px] lg:w-[280px] flex-shrink-0">
+                {/* Detail panel — hidden on mobile, shown as sidebar on md+ */}
+                <div className="hidden md:block w-[260px] lg:w-[280px] flex-shrink-0">
                     <EventDetailPanel
                         event={selectedEvent}
                         onExpand={() => setDetailDrawerOpen(true)}

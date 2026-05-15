@@ -188,10 +188,11 @@ function Sidebar() {
     try {
       const events = await eventService.list();
       const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // midnight today
       const total = events.length;
       const completed = events.filter(e => e.status === "completed").length;
-      const overdue = events.filter(e => e.status !== "completed" && e.start_time && new Date(e.start_time) < now).length;
-      const pending = events.filter(e => e.status !== "completed" && (!e.start_time || new Date(e.start_time) >= now)).length;
+      const overdue = events.filter(e => e.status !== "completed" && e.start_time && new Date(e.start_time) < startOfToday).length;
+      const pending = events.filter(e => e.status !== "completed" && (!e.start_time || new Date(e.start_time) >= startOfToday)).length;
       setStats({ total, completed, pending, overdue });
     } catch { /* ignore */ }
     try {
@@ -223,7 +224,10 @@ function Sidebar() {
     <div className="hidden lg:flex w-80 bg-white border-r border-gray-200 flex-col h-full">
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-gray-900">Summary</h2>
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-5 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full" />
+            <h2 className="text-sm font-semibold text-gray-900">Summary</h2>
+          </div>
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSummaryVisible(!summaryVisible)}>
             {summaryVisible ? <EyeOff className="w-4 h-4 text-gray-600" /> : <Eye className="w-4 h-4 text-gray-600" />}
           </Button>
@@ -306,8 +310,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user, loading, router]);
 
   if (loading || !user) return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ fontSize: 14, color: "#9ca3af" }}>Loading...</div>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-sm text-gray-400">Loading...</div>
     </div>
   );
 

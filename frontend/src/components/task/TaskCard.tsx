@@ -6,23 +6,7 @@ import { Calendar, Clock, AlertCircle, FileText, GraduationCap, Flag } from 'luc
 import { COURSE_ICONS } from '@/constants/course-icons';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  due_date: string;
-  status: 'pending' | 'in-progress' | 'completed';
-  priority: 'low' | 'medium' | 'high';
-  type: 'assignment' | 'exam' | 'milestone';
-  course_id: string;
-  course_name: string;
-  course_color: string;
-  course_icon: string;
-  location?: string;
-  time?: string;
-  estimated_hours?: number;
-}
+import type { Task } from '@/types';
 
 interface TaskCardProps {
   task: Task;

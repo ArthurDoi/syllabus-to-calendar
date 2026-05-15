@@ -3,23 +3,7 @@
 import { TaskGroup } from './TaskGroup';
 import { Card } from '@/components/ui/card';
 import { Loader2, AlertCircle } from 'lucide-react';
-
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  due_date: string;
-  status: 'pending' | 'in-progress' | 'completed';
-  priority: 'low' | 'medium' | 'high';
-  type: 'assignment' | 'exam' | 'milestone';
-  course_id: string;
-  course_name: string;
-  course_color: string;
-  course_icon: string;
-  location?: string;
-  time?: string;
-  estimated_hours?: number;
-}
+import type { Task } from '@/types';
 
 interface TaskListProps {
   tasks: Task[];

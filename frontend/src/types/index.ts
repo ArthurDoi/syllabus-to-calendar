@@ -51,7 +51,8 @@ export interface CourseCreate {
 }
 
 // ── Event ─────────────────────────────────────────────────────────────────────
-export type EventLabel = "assignment" | "exam" | "lecture" | "holiday";
+export type EventLabel = string;
+
 export type EventStatus = "pending" | "in-progress" | "completed";
 
 export interface CalEvent {
@@ -126,3 +127,46 @@ export interface UserStats {
   best_streak: number;
   last_streak_date?: string;
 }
+
+// ── Task (shared UI type — mapped từ CalEvent + Course) ───────────────────────
+export interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string;                                              // từ start_time
+  status: "pending" | "in-progress" | "completed";
+  priority: "low" | "medium" | "high";
+  type: "assignment" | "exam" | "milestone";                    // lecture/holiday → milestone
+  course_id: string;
+  course_name: string;
+  course_color: string;
+  course_icon: string;
+  location?: string;
+  time?: string;
+  estimated_hours?: number;
+}
+
+/** Map CalEvent + Course → Task UI model */
+export function mapEventToTask(ev: CalEvent, courses: Course[]): Task {
+  const course = courses.find((c) => c.id === ev.course_id);
+  // Map any label → Task.type (only 3 valid task types)
+  const labelToType = (label?: string): Task["type"] => {
+    if (label === "assignment") return "assignment";
+    if (label === "exam") return "exam";
+    return "milestone"; // lecture, holiday, travel, meeting, custom → milestone
+  };
+  return {
+    id: ev.id,
+    title: ev.title,
+    description: ev.description || null,
+    due_date: ev.start_time || new Date().toISOString(),
+    status: (ev.status as Task["status"]) || "pending",
+    priority: "medium",
+    type: labelToType(ev.label),
+    course_id: ev.course_id || "",
+    course_name: course?.name ?? "Unknown Course",
+    course_color: course?.color ?? "#9ca3af",
+    course_icon: course?.icon ?? "",
+  };
+}
+

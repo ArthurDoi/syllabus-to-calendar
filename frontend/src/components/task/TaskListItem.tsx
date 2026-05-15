@@ -8,23 +8,7 @@ import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TaskPriorityDropdown } from './TaskPriorityDropdown';
 import { TaskStatusDropdown } from './TaskStatusDropdown';
-
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  due_date: string;
-  status: 'pending' | 'in-progress' | 'completed';
-  priority: 'low' | 'medium' | 'high';
-  type: 'assignment' | 'exam' | 'milestone';
-  course_id: string;
-  course_name: string;
-  course_color: string;
-  course_icon: string;
-  location?: string;
-  time?: string;
-  estimated_hours?: number;
-}
+import type { Task } from '@/types';
 
 interface TaskListItemProps {
   task: Task;
@@ -104,7 +88,7 @@ export function TaskListItem({ task, onTaskClick, onStatusChange, onPriorityChan
           <Checkbox 
             checked={task.status === 'completed'}
             onCheckedChange={(checked) => {
-              if (onStatusChange && task.type === 'assignment') {
+              if (onStatusChange) {
                 onStatusChange(checked ? 'completed' : 'pending');
               }
             }}

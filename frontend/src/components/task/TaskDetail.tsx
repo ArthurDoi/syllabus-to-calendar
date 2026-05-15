@@ -4,27 +4,11 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, FileText, GraduationCap, Flag, X, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, FileText, GraduationCap, Flag, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { COURSE_ICONS } from '@/constants/course-icons';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface Task {
-  id: string;
-  title: string;
-  description: string | null;
-  due_date: string;
-  status: 'pending' | 'in-progress' | 'completed';
-  priority: 'low' | 'medium' | 'high';
-  type: 'assignment' | 'exam' | 'milestone';
-  course_id: string;
-  course_name: string;
-  course_color: string;
-  course_icon: string;
-  location?: string;
-  time?: string;
-  estimated_hours?: number;
-}
+import type { Task } from '@/types';
 
 interface TaskDetailProps {
   task: Task;
@@ -97,10 +81,6 @@ export function TaskDetail({ task, onClose, onUpdate }: TaskDetailProps) {
   };
 
   const handleStatusChange = async (newStatus: 'pending' | 'in-progress' | 'completed') => {
-    if (task.type !== 'assignment') {
-      return;
-    }
-
     setUpdating(true);
     try {
       const { eventService } = await import('@/lib/services');

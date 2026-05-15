@@ -37,8 +37,8 @@ export function TaskStatusDropdown({
 }: TaskStatusDropdownProps) {
   const [open, setOpen] = useState(false);
 
-  // Only assignments can change status
-  const isReadOnly = taskType !== 'assignment' || disabled;
+  // All task types can change status
+  const isReadOnly = disabled;
   const selectedOption = statusOptions.find(opt => opt.value === currentStatus) || statusOptions[0];
 
   const handleSelect = (status: 'pending' | 'in-progress' | 'completed') => {

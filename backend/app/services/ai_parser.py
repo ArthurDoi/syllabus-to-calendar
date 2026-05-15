@@ -26,7 +26,7 @@ You are a smart academic assistant. Your task is to read the syllabus image and 
   "events": [
     {
       "title": "Course Name / Assignment / Exam / Task / ..etc",
-      "label": "lecture|assignment|exam|holiday",
+      "label": "Any descriptive label: lecture, assignment, exam, holiday, seminar, lab, project, meeting, travel, or any relevant category",
       "description": "Description if any",
       "start_time": "ISO datetime or null",
       "end_time": "ISO datetime or null",
