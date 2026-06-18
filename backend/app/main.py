@@ -33,6 +33,8 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:3001",
         settings.FRONTEND_URL,
+        "https://arthurdoi.id.vn",
+        "https://www.arthurdoi.id.vn",
     ],
     allow_origin_regex=r"https://.*\.vercel\.app",  # Allow all Vercel preview deployments
     allow_credentials=True,
