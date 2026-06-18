@@ -88,7 +88,7 @@ async def login(
     result = await db.execute(select(User).where(User.email == form.username))
     user: User | None = result.scalar_one_or_none()
 
-    if not user or not verify_password(form.password, user.password_hash):
+    if not user or not user.password_hash or not verify_password(form.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -338,7 +338,12 @@ async def google_exchange(body: GoogleExchangeRequest, db: AsyncSession = Depend
         db.add(sync)
 
     await db.commit()
-    return {"success": True}
+    access_token = create_access_token(user.id)
+    refresh_token = create_refresh_token(user.id)
+
+    response = JSONResponse(content={"success": True})
+    response = set_auth_cookies(response, access_token, refresh_token)
+    return response
 
 
 @router.get("/me", response_model=UserResponse)
