@@ -33,7 +33,9 @@ api.interceptors.response.use(
         );
         return api(original);
       } catch {
-        if (!window.location.pathname.startsWith("/auth/")) {
+        const PUBLIC_PATHS = ["/", "/privacy", "/terms"];
+        const isPublicPath = PUBLIC_PATHS.includes(window.location.pathname);
+        if (!isPublicPath && !window.location.pathname.startsWith("/auth/")) {
           window.location.href = "/auth/login?error=session_expired";
         }
       }
