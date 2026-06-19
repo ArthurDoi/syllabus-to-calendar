@@ -44,10 +44,41 @@ export const authService = {
     }
   },
 
-  googleLogin: () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-    const url = `${baseUrl}/auth/google/login`;
-    window.location.href = url;
+  googleLogin: (state?: string) => {
+    // Build Google OAuth URL directly on frontend — avoids navigating through Render
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI
+      || `${window.location.origin}/auth/callback`;
+
+    if (!clientId) {
+      // Fallback: navigate through backend (old behavior)
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      window.location.href = `${baseUrl}/auth/google/login${state ? `?state=${state}` : ""}`;
+      return;
+    }
+
+    const scopes = [
+      "openid",
+      "email",
+      "profile",
+      "https://www.googleapis.com/auth/calendar",
+    ].join(" ");
+
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: scopes,
+      access_type: "offline",
+      prompt: "consent",
+    });
+    if (state) params.set("state", state);
+
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+  },
+
+  googleExchange: async (code: string, state?: string): Promise<void> => {
+    await api.post("/auth/google/exchange", { code, state: state || null });
   },
 };
 
