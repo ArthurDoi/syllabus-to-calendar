@@ -84,7 +84,7 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={authService.googleLogin}
+              onClick={() => authService.googleLogin()}
               className="w-full px-4 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
