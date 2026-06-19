@@ -266,6 +266,7 @@ async def google_callback(code: str, state: str | None = None, db: AsyncSession 
 class GoogleExchangeRequest(BaseModel):
     code: str
     state: str | None = None
+    redirect_uri: str | None = None  # Must match exactly what frontend sent to Google
 
 
 @router.post("/google/exchange")
@@ -279,7 +280,7 @@ async def google_exchange(body: GoogleExchangeRequest, db: AsyncSession = Depend
                 "code": body.code,
                 "client_id": settings.GOOGLE_CLIENT_ID,
                 "client_secret": settings.GOOGLE_CLIENT_SECRET,
-                "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+                "redirect_uri": body.redirect_uri or settings.GOOGLE_REDIRECT_URI,
                 "grant_type": "authorization_code",
             },
         )

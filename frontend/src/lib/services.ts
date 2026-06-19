@@ -78,7 +78,13 @@ export const authService = {
   },
 
   googleExchange: async (code: string, state?: string): Promise<void> => {
-    await api.post("/auth/google/exchange", { code, state: state || null });
+    const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI
+      || `${window.location.origin}/auth/callback`;
+    await api.post("/auth/google/exchange", {
+      code,
+      state: state || null,
+      redirect_uri: redirectUri,  // Must match what was sent to Google
+    });
   },
 };
 
