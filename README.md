@@ -1,6 +1,6 @@
 # Syllabus to Calendar 🗓️
 
-**Live Demo:** [https://syllabus-to-calendar-nine.vercel.app/](https://syllabus-to-calendar-nine.vercel.app/)
+**Live Demo:** [https://www.arthurdoi.id.vn/](https://www.arthurdoi.id.vn/)
 
 ---
 
